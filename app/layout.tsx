@@ -13,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="bg-zinc-900 min-h-screen">
+    <html lang="en" suppressHydrationWarning>
+      <body className="bg-zinc-900 min-h-screen" suppressHydrationWarning>
         <FolderProvider>{children}</FolderProvider>
       </body>
     </html>

@@ -1,8 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { UserConfig, JournalEntry } from '@/app/types';
-import { getStoredFolderHandle, readConfig, listEntries } from '@/app/lib/fileSystem';
 
 interface FolderContextType {
   folderHandle: FileSystemDirectoryHandle | null;
@@ -13,7 +12,6 @@ interface FolderContextType {
   setEntries: (entries: Map<string, JournalEntry>) => void;
   refreshEntries: () => void;
   entriesVersion: number;
-  isLoading: boolean;
 }
 
 const FolderContext = createContext<FolderContextType | undefined>(undefined);
@@ -23,41 +21,10 @@ export function FolderProvider({ children }: { children: React.ReactNode }) {
   const [userConfig, setUserConfig] = useState<UserConfig | null>(null);
   const [entries, setEntries] = useState<Map<string, JournalEntry>>(new Map());
   const [entriesVersion, setEntriesVersion] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
 
   const refreshEntries = () => {
     setEntriesVersion((prev) => prev + 1);
   };
-
-  // Load folder handle and config on mount
-  useEffect(() => {
-    async function loadFolder() {
-      setIsLoading(true);
-      const handle = await getStoredFolderHandle();
-      if (handle) {
-        setFolderHandle(handle);
-        const config = await readConfig(handle);
-        setUserConfig(config);
-        const entriesMap = await listEntries(handle);
-        setEntries(entriesMap);
-      }
-      setIsLoading(false);
-    }
-    loadFolder();
-  }, []);
-
-  // Reload entries when version changes
-  useEffect(() => {
-    async function reloadEntries() {
-      if (folderHandle) {
-        const entriesMap = await listEntries(folderHandle);
-        setEntries(entriesMap);
-      }
-    }
-    if (entriesVersion > 0) {
-      reloadEntries();
-    }
-  }, [entriesVersion, folderHandle]);
 
   return (
     <FolderContext.Provider
@@ -70,7 +37,6 @@ export function FolderProvider({ children }: { children: React.ReactNode }) {
         setEntries,
         refreshEntries,
         entriesVersion,
-        isLoading,
       }}
     >
       {children}

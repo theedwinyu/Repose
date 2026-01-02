@@ -1,7 +1,4 @@
-import { get, set, del } from 'idb-keyval';
 import { UserConfig, JournalEntry, JournalEntryWithBody } from '@/app/types';
-
-const FOLDER_HANDLE_KEY = 'journalFolderHandle';
 
 export function isFileSystemAccessSupported(): boolean {
   return typeof window !== 'undefined' && 'showDirectoryPicker' in window;
@@ -12,39 +9,11 @@ export async function openJournalFolder(): Promise<FileSystemDirectoryHandle | n
     const handle = await window.showDirectoryPicker({
       mode: 'readwrite',
     });
-    await set(FOLDER_HANDLE_KEY, handle);
     return handle;
   } catch (error) {
     console.error('Error opening folder:', error);
     return null;
   }
-}
-
-export async function getStoredFolderHandle(): Promise<FileSystemDirectoryHandle | null> {
-  try {
-    const handle = await get<FileSystemDirectoryHandle>(FOLDER_HANDLE_KEY);
-    if (!handle) return null;
-
-    // Request permission
-    const permission = await handle.queryPermission({ mode: 'readwrite' });
-    if (permission === 'granted') {
-      return handle;
-    }
-
-    const requestPermission = await handle.requestPermission({ mode: 'readwrite' });
-    if (requestPermission === 'granted') {
-      return handle;
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error getting stored folder handle:', error);
-    return null;
-  }
-}
-
-export async function clearStoredFolderHandle(): Promise<void> {
-  await del(FOLDER_HANDLE_KEY);
 }
 
 export async function readConfig(handle: FileSystemDirectoryHandle): Promise<UserConfig | null> {

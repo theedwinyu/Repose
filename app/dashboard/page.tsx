@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, differenceInDays, parse } from 'date-fns';
 import { useFolderContext } from '../context/FolderContext';
-import { clearStoredFolderHandle } from '../lib/fileSystem';
 import Header from '../components/Header';
 import CalendarComponent from '../components/Calendar';
 
@@ -12,14 +11,19 @@ export default function Dashboard() {
   const router = useRouter();
   const { folderHandle, userConfig, entries, setFolderHandle, setUserConfig, setEntries } = useFolderContext();
   const [activeStartDate, setActiveStartDate] = useState<Date>(new Date());
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (!folderHandle || !userConfig) {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted && (!folderHandle || !userConfig)) {
       router.push('/');
     }
-  }, [folderHandle, userConfig, router]);
+  }, [folderHandle, userConfig, router, isMounted]);
 
-  if (!folderHandle || !userConfig) {
+  if (!isMounted || !folderHandle || !userConfig) {
     return null;
   }
 
@@ -42,7 +46,6 @@ export default function Dashboard() {
 
     const daysDiff = differenceInDays(today, mostRecent);
 
-    // Streak broken if most recent entry is not today or yesterday
     if (daysDiff > 1) return 0;
 
     let streak = 1;
@@ -65,7 +68,6 @@ export default function Dashboard() {
 
   const streak = calculateStreak();
   
-  // Count moods
   const moodCounts = {
     happy: 0,
     neutral: 0,
@@ -76,11 +78,9 @@ export default function Dashboard() {
     moodCounts[entry.mood]++;
   });
 
-  // Check if there's an entry for today
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const hasEntryToday = entries.has(todayStr);
 
-  // Get recent entries
   const recentEntries = Array.from(entries.entries())
     .sort((a, b) => b[1].timestamp.localeCompare(a[1].timestamp))
     .slice(0, 5);
@@ -94,8 +94,8 @@ export default function Dashboard() {
     router.push(`/journal/${todayStr}`);
   };
 
-  const handleChangeFolder = async () => {
-    await clearStoredFolderHandle();
+  const handleChangeFolder = () => {
+    // Just clear the context state
     setFolderHandle(null);
     setUserConfig(null);
     setEntries(new Map());
@@ -116,7 +116,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800">
       <Header title="📔 Journal" />
 
-      <main className="max-w-7xl mx-auto p-6 animate-fade-in">
+      <main className="max-w-7xl mx-auto p-6">
         {/* Welcome Section */}
         <div className="mb-10">
           <h2 className="text-4xl font-bold text-zinc-100 mb-3 tracking-tight">
@@ -137,25 +137,25 @@ export default function Dashboard() {
 
           <div className="bg-gradient-to-br from-orange-900/40 to-orange-800/20 border border-orange-700/30 rounded-2xl p-6 text-center card-hover backdrop-blur-sm">
             <div className="text-4xl mb-3">🔥</div>
-            <div className="text-3xl font-bold text-orange-300 mb-1">{streak}</div>
+            <div className="text-3xl font-bold text-orange-400 mb-1">{streak}</div>
             <div className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Day Streak</div>
           </div>
 
           <div className="bg-gradient-to-br from-green-900/40 to-green-800/20 border border-green-700/30 rounded-2xl p-6 text-center card-hover backdrop-blur-sm">
             <div className="text-4xl mb-3">😊</div>
-            <div className="text-3xl font-bold text-green-300 mb-1">{moodCounts.happy}</div>
+            <div className="text-3xl font-bold text-green-400 mb-1">{moodCounts.happy}</div>
             <div className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Happy Days</div>
           </div>
 
           <div className="bg-gradient-to-br from-yellow-900/40 to-yellow-800/20 border border-yellow-700/30 rounded-2xl p-6 text-center card-hover backdrop-blur-sm">
             <div className="text-4xl mb-3">😐</div>
-            <div className="text-3xl font-bold text-yellow-300 mb-1">{moodCounts.neutral}</div>
+            <div className="text-3xl font-bold text-yellow-400 mb-1">{moodCounts.neutral}</div>
             <div className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Neutral Days</div>
           </div>
 
           <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-700/30 rounded-2xl p-6 text-center card-hover backdrop-blur-sm">
             <div className="text-4xl mb-3">😢</div>
-            <div className="text-3xl font-bold text-blue-300 mb-1">{moodCounts.sad}</div>
+            <div className="text-3xl font-bold text-blue-400 mb-1">{moodCounts.sad}</div>
             <div className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Sad Days</div>
           </div>
         </div>
@@ -238,7 +238,7 @@ export default function Dashboard() {
             onClick={handleChangeFolder}
             className="text-zinc-500 hover:text-zinc-300 text-sm font-medium transition-colors"
           >
-            Change Journal Folder
+            Select Different Folder
           </button>
         </div>
       </main>
