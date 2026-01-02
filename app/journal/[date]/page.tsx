@@ -29,6 +29,7 @@ export default function JournalEditor() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   // Track initial values for unsaved changes detection
   const [initialTitle, setInitialTitle] = useState('');
@@ -56,6 +57,7 @@ export default function JournalEditor() {
         setInitialBody(entry.body);
         setInitialMood(entry.mood);
         setIsExisting(true);
+        setIsPreviewMode(true); // Start in preview mode for existing entries
       }
       
       setIsLoading(false);
@@ -81,7 +83,6 @@ export default function JournalEditor() {
 
       await writeEntry(folderHandle, dateStr, entry, body);
       
-      // Update initial values after successful save
       setInitialTitle(title);
       setInitialBody(body);
       setInitialMood(mood);
@@ -89,7 +90,6 @@ export default function JournalEditor() {
       setSaveStatus('saved');
       setLastSavedTime(new Date());
       
-      // Reset to idle after 2 seconds
       setTimeout(() => {
         setSaveStatus('idle');
       }, 2000);
@@ -106,33 +106,29 @@ export default function JournalEditor() {
 
   // Debounced auto-save effect
   useEffect(() => {
-    // Clear existing timer
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
 
-    // Only auto-save if there's content and it's different from initial
     const hasChanges = 
       title !== initialTitle ||
       body !== initialBody ||
       mood !== initialMood;
 
-    if (hasChanges && title.trim() && mood) {
-      // Set new timer for 2.5 seconds of inactivity
+    if (hasChanges && title.trim() && mood && !isPreviewMode) {
       autoSaveTimerRef.current = setTimeout(() => {
         autoSave();
       }, 2500);
     }
 
-    // Cleanup
     return () => {
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [title, body, mood, initialTitle, initialBody, initialMood, autoSave]);
+  }, [title, body, mood, initialTitle, initialBody, initialMood, autoSave, isPreviewMode]);
 
-  // Warn before closing tab with unsaved changes (only if auto-save failed)
+  // Warn before closing tab with unsaved changes
   useEffect(() => {
     const hasUnsavedChanges = 
       (title !== initialTitle ||
@@ -140,7 +136,7 @@ export default function JournalEditor() {
       mood !== initialMood) && saveStatus !== 'saved';
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
+      if (hasUnsavedChanges && !isPreviewMode) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -148,7 +144,7 @@ export default function JournalEditor() {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [title, body, mood, initialTitle, initialBody, initialMood, saveStatus]);
+  }, [title, body, mood, initialTitle, initialBody, initialMood, saveStatus, isPreviewMode]);
 
   if (!folderHandle) {
     return null;
@@ -180,7 +176,6 @@ export default function JournalEditor() {
 
     await autoSave();
     
-    // Small delay to show the saved status, then navigate
     setTimeout(() => {
       router.push('/dashboard');
     }, 500);
@@ -206,7 +201,7 @@ export default function JournalEditor() {
       body !== initialBody ||
       mood !== initialMood;
 
-    if (hasUnsavedChanges && saveStatus !== 'saved') {
+    if (hasUnsavedChanges && saveStatus !== 'saved' && !isPreviewMode) {
       setShowUnsavedDialog(true);
     } else {
       router.push('/dashboard');
@@ -219,14 +214,13 @@ export default function JournalEditor() {
       body !== initialBody ||
       mood !== initialMood;
 
-    if (hasUnsavedChanges && saveStatus !== 'saved') {
+    if (hasUnsavedChanges && saveStatus !== 'saved' && !isPreviewMode) {
       setShowUnsavedDialog(true);
     } else {
       router.push('/dashboard');
     }
   };
 
-  // Format last saved time
   const getLastSavedText = () => {
     if (!lastSavedTime) return '';
     
@@ -237,6 +231,12 @@ export default function JournalEditor() {
     if (diffSeconds < 120) return '1 minute ago';
     if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} minutes ago`;
     return format(lastSavedTime, 'h:mm a');
+  };
+
+  const moodEmojis = {
+    happy: '😊',
+    neutral: '😐',
+    sad: '😢',
   };
 
   if (isLoading) {
@@ -253,140 +253,217 @@ export default function JournalEditor() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800">
       <Header
-        title={isExisting ? 'Edit Entry' : 'New Entry'}
+        title={isExisting ? (isPreviewMode ? 'View Entry' : 'Edit Entry') : 'New Entry'}
         showBackButton
         onBack={handleBack}
       />
 
       <main className="max-w-4xl mx-auto p-6 animate-fade-in">
-        {/* Date Display & Save Status */}
+        {/* Date Display, Save Status & Mode Toggle */}
         <div className="mb-6 flex items-center justify-between">
           <div>
             <p className="text-sm text-zinc-400 mb-1 font-medium">
-              {isExisting ? 'Editing entry for' : 'Creating entry for'}
+              {isPreviewMode ? 'Entry for' : (isExisting ? 'Editing entry for' : 'Creating entry for')}
             </p>
             <p className="text-2xl font-bold text-zinc-100 tracking-tight">{formattedDate}</p>
           </div>
           
-          {/* Auto-save Status Indicator */}
-          <div className="flex items-center gap-2 text-sm">
-            {saveStatus === 'saving' && (
-              <div className="flex items-center gap-2 text-blue-400">
-                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span className="font-medium">Saving...</span>
+          <div className="flex items-center gap-4">
+            {/* Auto-save Status Indicator */}
+            {!isPreviewMode && (
+              <div className="flex items-center gap-2 text-sm">
+                {saveStatus === 'saving' && (
+                  <div className="flex items-center gap-2 text-blue-400">
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="font-medium">Saving...</span>
+                  </div>
+                )}
+                {saveStatus === 'saved' && (
+                  <div className="flex items-center gap-2 text-green-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="font-medium">Saved {getLastSavedText()}</span>
+                  </div>
+                )}
+                {saveStatus === 'error' && (
+                  <div className="flex items-center gap-2 text-red-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="font-medium">Save failed</span>
+                  </div>
+                )}
               </div>
             )}
-            {saveStatus === 'saved' && (
-              <div className="flex items-center gap-2 text-green-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="font-medium">Saved {getLastSavedText()}</span>
-              </div>
-            )}
-            {saveStatus === 'error' && (
-              <div className="flex items-center gap-2 text-red-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="font-medium">Save failed</span>
-              </div>
+
+            {/* Preview/Edit Toggle */}
+            {isExisting && (
+              <button
+                onClick={() => setIsPreviewMode(!isPreviewMode)}
+                className="flex items-center gap-2 bg-zinc-800/60 hover:bg-zinc-700/60 text-zinc-100 font-medium py-2 px-4 rounded-lg transition-all border border-zinc-700/50"
+              >
+                {isPreviewMode ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    Preview
+                  </>
+                )}
+              </button>
             )}
           </div>
         </div>
 
-        {/* Title Input */}
-        <div className="mb-6">
-          <label className="block text-sm font-semibold text-zinc-300 mb-2">
-            Entry Title
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              setError('');
-            }}
-            placeholder="Give this entry a title..."
-            className="w-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-100 px-5 py-4 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-lg placeholder:text-zinc-500 backdrop-blur-sm"
-          />
-        </div>
+        {isPreviewMode ? (
+          /* Preview Mode */
+          <>
+            {/* Title Display */}
+            <div className="mb-6">
+              <h1 className="text-4xl font-bold text-zinc-100 mb-4">{title}</h1>
+              <div className="flex items-center gap-4 text-zinc-400">
+                <span className="flex items-center gap-2">
+                  <span className="text-2xl">{mood && moodEmojis[mood]}</span>
+                  <span className="capitalize">{mood}</span>
+                </span>
+                <span>•</span>
+                <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
+              </div>
+            </div>
 
-        {/* Rich Text Editor */}
-        <div className="mb-4">
-          <label className="block text-sm font-semibold text-zinc-300 mb-2">
-            Entry Content
-          </label>
-          <RichTextEditor content={body} onChange={setBody} />
-        </div>
+            {/* Content Display */}
+            <div className="glass rounded-2xl p-8 mb-6 backdrop-blur-xl">
+              <div 
+                className="prose prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ __html: body }}
+              />
+            </div>
 
-        {/* Word Count */}
-        <div className="text-right text-sm text-zinc-500 mb-6 font-medium">
-          {wordCount} {wordCount === 1 ? 'word' : 'words'}
-        </div>
+            {/* Preview Mode Actions */}
+            <div className="flex gap-4">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="flex-1 bg-zinc-700/60 hover:bg-zinc-600/60 text-zinc-100 font-semibold py-4 px-6 rounded-xl transition-all duration-200 backdrop-blur-sm"
+              >
+                Back to Dashboard
+              </button>
+              
+              {isExisting && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 font-semibold py-4 px-6 rounded-xl transition-all duration-200"
+                >
+                  Delete Entry
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          /* Edit Mode */
+          <>
+            {/* Title Input */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-zinc-300 mb-2">
+                Entry Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setError('');
+                }}
+                placeholder="Give this entry a title..."
+                className="w-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-100 px-5 py-4 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-lg placeholder:text-zinc-500 backdrop-blur-sm"
+              />
+            </div>
 
-        {/* Mood Selector */}
-        <div className="mb-6">
-          <MoodSelector selected={mood} onChange={setMood} />
-        </div>
+            {/* Rich Text Editor */}
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-zinc-300 mb-2">
+                Entry Content
+              </label>
+              <RichTextEditor content={body} onChange={setBody} />
+            </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-xl mb-6 animate-slide-in">
-            {error}
-          </div>
+            {/* Word Count */}
+            <div className="text-right text-sm text-zinc-500 mb-6 font-medium">
+              {wordCount} {wordCount === 1 ? 'word' : 'words'}
+            </div>
+
+            {/* Mood Selector */}
+            <div className="mb-6">
+              <MoodSelector selected={mood} onChange={setMood} />
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-xl mb-6 animate-slide-in">
+                {error}
+              </div>
+            )}
+
+            {/* Delete Button (for existing entries) */}
+            {isExisting && (
+              <div className="mb-6">
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="text-red-400 hover:text-red-300 text-sm transition-colors flex items-center gap-2 font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete this entry
+                </button>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-4">
+              <button
+                onClick={handleCancel}
+                disabled={saveStatus === 'saving'}
+                className="flex-1 bg-zinc-700/60 hover:bg-zinc-600/60 disabled:bg-zinc-800/50 disabled:cursor-not-allowed text-zinc-100 font-semibold py-4 px-6 rounded-xl transition-all duration-200 backdrop-blur-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleManualSave}
+                disabled={saveStatus === 'saving' || !title.trim() || !mood}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 disabled:from-zinc-700 disabled:to-zinc-700 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-900/40 hover:-translate-y-0.5 disabled:shadow-none disabled:hover:translate-y-0"
+              >
+                {saveStatus === 'saving' ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Done
+                  </>
+                )}
+              </button>
+            </div>
+          </>
         )}
-
-        {/* Delete Button (for existing entries) */}
-        {isExisting && (
-          <div className="mb-6">
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="text-red-400 hover:text-red-300 text-sm transition-colors flex items-center gap-2 font-medium"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Delete this entry
-            </button>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex gap-4">
-          <button
-            onClick={handleCancel}
-            disabled={saveStatus === 'saving'}
-            className="flex-1 bg-zinc-700/60 hover:bg-zinc-600/60 disabled:bg-zinc-800/50 disabled:cursor-not-allowed text-zinc-100 font-semibold py-4 px-6 rounded-xl transition-all duration-200 backdrop-blur-sm"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleManualSave}
-            disabled={saveStatus === 'saving' || !title.trim() || !mood}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 disabled:from-zinc-700 disabled:to-zinc-700 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-900/40 hover:-translate-y-0.5 disabled:shadow-none disabled:hover:translate-y-0"
-          >
-            {saveStatus === 'saving' ? (
-              <>
-                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Saving...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Done
-              </>
-            )}
-          </button>
-        </div>
       </main>
 
       {/* Delete Confirmation Dialog */}

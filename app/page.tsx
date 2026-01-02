@@ -112,7 +112,7 @@ export default function Home() {
             <>
               <h2 className="text-2xl font-bold text-zinc-100 mb-3 tracking-tight">Open Your Journal</h2>
               <p className="text-zinc-400 mb-8 leading-relaxed">
-                Select your journal folder to get started. Your entries are stored locally and never leave your computer.
+                🔒 Select your journal folder to get started. Your entries are stored locally and never leave your computer.
               </p>
               <button
                 onClick={handleSelectFolder}
