@@ -10,6 +10,9 @@ A sleek, dark-mode journal application built with Next.js that stores entries lo
 - 😊 **Mood Tracking**: Track your emotional state with each entry
 - 📊 **Statistics**: View your journaling stats including streaks and mood counts
 - ✍️ **Rich Text Editor**: Full-featured editor with formatting options
+- 💾 **Auto-Save**: Automatic saving every 2.5 seconds while editing
+- 👁️ **Preview Mode**: Read-only view for reviewing past entries
+- 🔍 **Search**: Quickly find entries by title
 - 🔒 **Privacy-First**: No cloud sync, no data collection - everything stays on your device
 
 ## Browser Requirements
@@ -41,6 +44,15 @@ npm run dev
 3. Click "Start Journaling"
 4. Begin writing your first entry!
 
+### Returning Users
+
+When you return to the app:
+1. Click "Select Journal Folder"
+2. Choose your existing journal folder
+3. Your name and all entries will automatically load
+
+This one-click process is required each visit for security, but your folder selection remembers your configuration.
+
 ## How It Works
 
 ### File Structure
@@ -59,7 +71,6 @@ your-journal-folder/
 ### Data Storage
 
 - **Local Files**: Each journal entry creates two files - a JSON file for metadata and an HTML file for content
-- **IndexedDB**: The folder handle is stored in your browser's IndexedDB so you don't have to re-select the folder each time
 - **No Cloud**: Nothing is sent to any server - everything stays on your device
 
 ## Usage
@@ -71,6 +82,13 @@ your-journal-folder/
 3. Write your thoughts in the rich text editor
 4. Select your mood (Happy, Neutral, or Sad)
 5. Click "Save Entry"
+
+### Preview Mode
+
+- Existing entries open in **Preview Mode** by default for comfortable reading
+- Click the "Edit" button in the top right to switch to edit mode
+- Click "Preview" to return to read-only view
+- Preview mode displays your entry in a clean, distraction-free format
 
 ### Editing an Entry
 
@@ -84,12 +102,29 @@ your-journal-folder/
 2. Click "Delete this entry" at the bottom
 3. Confirm the deletion
 
+### Searching Entries
+
+1. Use the search bar at the top of the dashboard
+2. Type to filter entries by title
+3. Search results appear below, showing up to 10 matches
+4. Click any result to open that entry
+
 ### Statistics
 
 The dashboard shows:
 - **Days Journaled**: Total number of entries
 - **Day Streak**: Consecutive days you've journaled
 - **Mood Counts**: Distribution of your moods (Happy, Neutral, Sad)
+
+### Auto-Save
+
+- Entries automatically save every 2.5 seconds while you're editing
+- Status indicator in top right shows:
+  - "Saving..." - Currently saving
+  - "Saved just now" - Successfully saved
+  - "Saved X minutes ago" - Time since last save
+- Manual "Done" button saves and returns to dashboard
+- You'll be warned if you try to leave with unsaved changes
 
 ## Tech Stack
 
@@ -98,7 +133,17 @@ The dashboard shows:
 - **Rich Text**: Tiptap with StarterKit
 - **Calendar**: react-calendar
 - **Dates**: date-fns
-- **Storage**: File System Access API + idb-keyval
+- **Storage**: File System Access API (no database needed)
+- **Typography**: Inter for UI, Merriweather for content
+
+## Design Features
+
+- **Glassmorphism**: Frosted glass effects on cards and panels
+- **Smooth Animations**: Fade-in, slide-in, and scale animations
+- **Gradient Accents**: Colorful gradients on stats and buttons
+- **Serif Typography**: Merriweather font for journal content for better readability
+- **Modern Calendar**: Enhanced styling with hover effects and mood indicators
+- **Responsive**: Works on desktop browsers
 
 ## Building for Production
 ```bash
@@ -108,10 +153,11 @@ npm start
 
 ## Notes
 
-- The app requires permission to read and write files in your selected folder
-- Permissions are requested each time you open the app (browser security feature)
+- You need to select your journal folder each time you visit the app (browser security requirement)
+- If you select the same folder, your configuration and entries load automatically
 - Your journal folder can be anywhere on your computer
-- You can sync your journal folder with cloud storage services (Dropbox, Google Drive, etc.) if desired
+- You can manually sync your journal folder with cloud storage services if desired
+- All formatting and content is preserved exactly as you write it
 
 ## Privacy & Security
 
@@ -120,6 +166,7 @@ npm start
 - ✅ No cloud synchronization
 - ✅ No data sent to any server
 - ✅ You have complete control over your journal files
+- ✅ Browser security requires folder re-selection each visit (this is intentional)
 
 ## License
 
