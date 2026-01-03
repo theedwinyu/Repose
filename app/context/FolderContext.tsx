@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserConfig, JournalEntry } from '@/app/types';
+import { listEntries } from '@/app/lib/fileSystem';
 
 interface FolderContextType {
   folderHandle: FileSystemDirectoryHandle | null;
@@ -25,6 +26,22 @@ export function FolderProvider({ children }: { children: React.ReactNode }) {
   const refreshEntries = () => {
     setEntriesVersion((prev) => prev + 1);
   };
+
+  // Reload entries when version changes
+  useEffect(() => {
+    async function reloadEntries() {
+      if (folderHandle && entriesVersion > 0) {
+        try {
+          const entriesMap = await listEntries(folderHandle);
+          setEntries(entriesMap);
+        } catch (err) {
+          console.error('Error reloading entries:', err);
+        }
+      }
+    }
+    
+    reloadEntries();
+  }, [entriesVersion, folderHandle]);
 
   return (
     <FolderContext.Provider
