@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { format, differenceInDays, parse, startOfWeek, endOfWeek, eachDayOfInterval, subDays } from 'date-fns';
+import { format, differenceInDays, parse, startOfWeek, endOfWeek, subDays } from 'date-fns';
+import Fuse from 'fuse.js';
 import { useFolderContext } from '../context/FolderContext';
+import { readEntry } from '../lib/fileSystem';
 import Header from '../components/Header';
 import CalendarComponent from '../components/Calendar';
 
@@ -14,11 +16,11 @@ export default function Dashboard() {
   const [isMounted, setIsMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [greeting, setGreeting] = useState('');
+  const [isLoadingSearch, setIsLoadingSearch] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
     
-    // Set time-based greeting
     const hour = new Date().getHours();
     if (hour < 12) setGreeting('Good morning');
     else if (hour < 18) setGreeting('Good afternoon');
@@ -31,6 +33,90 @@ export default function Dashboard() {
     }
   }, [folderHandle, userConfig, router, isMounted]);
 
+  // Prepare searchable entries with content
+  const [searchableEntries, setSearchableEntries] = useState<Array<{
+    dateStr: string;
+    title: string;
+    mood: 'happy' | 'neutral' | 'sad';
+    timestamp: string;
+    content: string;
+  }>>([]);
+
+  // Load entry contents for search (on mount and when entries change)
+  useEffect(() => {
+    async function loadEntriesForSearch() {
+      if (!folderHandle) return;
+      
+      const entriesWithContent = await Promise.all(
+        Array.from(entries.entries()).map(async ([dateStr, entry]) => {
+          try {
+            const fullEntry = await readEntry(folderHandle, dateStr);
+            // Strip HTML tags from content for search
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = fullEntry?.body || '';
+            const textContent = tempDiv.textContent || tempDiv.innerText || '';
+            
+            return {
+              dateStr,
+              title: entry.title,
+              mood: entry.mood,
+              timestamp: entry.timestamp,
+              content: textContent,
+            };
+          } catch (err) {
+            console.error(`Failed to load entry ${dateStr}:`, err);
+            return {
+              dateStr,
+              title: entry.title,
+              mood: entry.mood,
+              timestamp: entry.timestamp,
+              content: '',
+            };
+          }
+        })
+      );
+      
+      setSearchableEntries(entriesWithContent);
+    }
+
+    if (entries.size > 0) {
+      loadEntriesForSearch();
+    }
+  }, [entries, folderHandle]);
+
+  // Configure Fuse.js
+  const fuse = useMemo(() => {
+    return new Fuse(searchableEntries, {
+      keys: [
+        { name: 'title', weight: 2 }, // Title is more important
+        { name: 'content', weight: 1 },
+      ],
+      threshold: 0.3, // 0 = perfect match, 1 = match anything
+      includeScore: true,
+      minMatchCharLength: 2,
+      ignoreLocation: true, // Search entire string, not just beginning
+    });
+  }, [searchableEntries]);
+
+  // Enhanced search with Fuse.js
+  const filteredEntries = useMemo(() => {
+    if (!searchQuery.trim()) {
+      // No search query - return all entries sorted by date
+      return Array.from(entries.entries())
+        .sort((a, b) => b[1].timestamp.localeCompare(a[1].timestamp));
+    }
+
+    // Use Fuse.js for fuzzy search
+    const results = fuse.search(searchQuery);
+    
+    // Convert Fuse results back to entry format
+    return results.map(result => {
+      const dateStr = result.item.dateStr;
+      const entry = entries.get(dateStr);
+      return [dateStr, entry] as [string, typeof entry];
+    }).filter((item): item is [string, NonNullable<typeof item[1]>] => item[1] !== undefined);
+  }, [searchQuery, entries, fuse]);
+
   if (!isMounted || !folderHandle || !userConfig) {
     return null;
   }
@@ -38,7 +124,6 @@ export default function Dashboard() {
   // Calculate stats
   const totalEntries = entries.size;
   
-  // Calculate streak
   const calculateStreak = () => {
     if (entries.size === 0) return 0;
 
@@ -86,7 +171,6 @@ export default function Dashboard() {
     moodCounts[entry.mood]++;
   });
 
-  // Calculate this week's entries
   const thisWeekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
   const thisWeekEnd = endOfWeek(new Date(), { weekStartsOn: 0 });
   const thisWeekEntries = Array.from(entries.keys()).filter(dateStr => {
@@ -96,15 +180,6 @@ export default function Dashboard() {
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const hasEntryToday = entries.has(todayStr);
-
-  // Filter entries based on search query
-  const filteredEntries = Array.from(entries.entries())
-    .filter(([_, entry]) => {
-      if (!searchQuery.trim()) return true;
-      const query = searchQuery.toLowerCase();
-      return entry.title.toLowerCase().includes(query);
-    })
-    .sort((a, b) => b[1].timestamp.localeCompare(a[1].timestamp));
 
   const recentEntries = searchQuery.trim() 
     ? filteredEntries.slice(0, 10)
@@ -136,7 +211,6 @@ export default function Dashboard() {
     sad: '😢',
   };
 
-  // Get last 7 days for mini activity view
   const getLast7Days = () => {
     const days = [];
     for (let i = 6; i >= 0; i--) {
@@ -155,6 +229,27 @@ export default function Dashboard() {
 
   const last7Days = getLast7Days();
 
+  // Get search preview snippet
+  const getSearchPreview = (dateStr: string, maxLength: number = 100): string => {
+    const searchableEntry = searchableEntries.find(e => e.dateStr === dateStr);
+    if (!searchableEntry || !searchQuery.trim()) return '';
+    
+    const content = searchableEntry.content;
+    const query = searchQuery.toLowerCase();
+    const index = content.toLowerCase().indexOf(query);
+    
+    if (index === -1) return '';
+    
+    const start = Math.max(0, index - 20);
+    const end = Math.min(content.length, index + maxLength);
+    let snippet = content.slice(start, end);
+    
+    if (start > 0) snippet = '...' + snippet;
+    if (end < content.length) snippet = snippet + '...';
+    
+    return snippet;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800">
       <Header title="📔 Journal" />
@@ -172,7 +267,6 @@ export default function Dashboard() {
               </p>
             </div>
 
-            {/* This Week Summary */}
             <div className="glass rounded-2xl p-6 backdrop-blur-xl text-center min-w-[160px]">
               <div className="text-sm text-zinc-400 mb-1 uppercase tracking-wider">This Week</div>
               <div className="text-4xl font-bold text-blue-400 mb-1">{thisWeekEntries}</div>
@@ -206,14 +300,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Search Bar */}
+        {/* Enhanced Search Bar */}
         <div className="mb-8 animate-slide-in" style={{ animationDelay: '0.1s' }}>
           <div className="relative">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search your journal..."
+              placeholder="Search titles and content..."
               className="w-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-100 pl-12 pr-5 py-4 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-zinc-500 backdrop-blur-sm"
             />
             <svg className="w-5 h-5 text-zinc-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,13 +325,22 @@ export default function Dashboard() {
             )}
           </div>
           {searchQuery && (
-            <p className="text-sm text-zinc-400 mt-2">
-              Found {filteredEntries.length} {filteredEntries.length === 1 ? 'entry' : 'entries'}
-            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <p className="text-sm text-zinc-400">
+                Found {filteredEntries.length} {filteredEntries.length === 1 ? 'entry' : 'entries'}
+              </p>
+              {filteredEntries.length > 0 && (
+                <div className="flex items-center gap-1 text-xs text-zinc-500">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Fuzzy search enabled
+                </div>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Only show stats and calendar when not searching */}
         {!searchQuery && (
           <>
             {/* Stats Grid */}
@@ -298,7 +401,6 @@ export default function Dashboard() {
               />
             </div>
 
-            {/* Write Today's Entry Button */}
             {!hasEntryToday && (
               <button
                 onClick={handleWriteToday}
@@ -329,7 +431,7 @@ export default function Dashboard() {
                 {searchQuery ? 'No entries found' : 'No journal entries yet'}
               </p>
               <p className="text-zinc-500 mb-8">
-                {searchQuery ? 'Try a different search term' : 'Start your journaling journey today'}
+                {searchQuery ? 'Try different keywords or check for typos' : 'Start your journaling journey today'}
               </p>
               {!searchQuery && (
                 <button
@@ -345,26 +447,36 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {recentEntries.map(([dateStr, entry]) => (
-                <button
-                  key={dateStr}
-                  onClick={() => handleDateClick(parse(dateStr, 'yyyy-MM-dd', new Date()))}
-                  className="w-full bg-zinc-800/40 hover:bg-zinc-700/60 border border-zinc-700/50 hover:border-zinc-600/50 rounded-xl p-5 transition-all duration-200 text-left flex items-center gap-4 card-hover backdrop-blur-sm group"
-                >
-                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-zinc-900/50 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <span className="text-3xl">{moodEmojis[entry.mood]}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-zinc-100 font-semibold truncate text-lg mb-1 group-hover:text-blue-400 transition-colors">{entry.title}</h4>
-                    <p className="text-zinc-400 text-sm font-medium">
-                      {format(parse(dateStr, 'yyyy-MM-dd', new Date()), 'MMMM d, yyyy • EEEE')}
-                    </p>
-                  </div>
-                  <svg className="w-5 h-5 text-zinc-500 flex-shrink-0 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              ))}
+              {recentEntries.map(([dateStr, entry]) => {
+                const preview = searchQuery ? getSearchPreview(dateStr) : '';
+                return (
+                  <button
+                    key={dateStr}
+                    onClick={() => handleDateClick(parse(dateStr, 'yyyy-MM-dd', new Date()))}
+                    className="w-full bg-zinc-800/40 hover:bg-zinc-700/60 border border-zinc-700/50 hover:border-zinc-600/50 rounded-xl p-5 transition-all duration-200 text-left flex items-start gap-4 card-hover backdrop-blur-sm group"
+                  >
+                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-zinc-900/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span className="text-3xl">{moodEmojis[entry.mood]}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-zinc-100 font-semibold truncate text-lg mb-1 group-hover:text-blue-400 transition-colors">
+                        {entry.title}
+                      </h4>
+                      <p className="text-zinc-400 text-sm font-medium mb-2">
+                        {format(parse(dateStr, 'yyyy-MM-dd', new Date()), 'MMMM d, yyyy • EEEE')}
+                      </p>
+                      {preview && (
+                        <p className="text-zinc-500 text-xs leading-relaxed line-clamp-2">
+                          {preview}
+                        </p>
+                      )}
+                    </div>
+                    <svg className="w-5 h-5 text-zinc-500 flex-shrink-0 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -384,7 +496,7 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Floating Action Button for New Entry */}
+      {/* Floating Action Button */}
       <button
         onClick={handleWriteToday}
         className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-full shadow-2xl flex items-center justify-center text-white hover:scale-110 transition-all duration-200 z-50 animate-scale-in"
