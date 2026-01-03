@@ -45,12 +45,10 @@ export default function JournalEditor() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [randomPrompt] = useState(() => writingPrompts[Math.floor(Math.random() * writingPrompts.length)]);
 
-  // Track initial values for unsaved changes detection
   const [initialTitle, setInitialTitle] = useState('');
   const [initialBody, setInitialBody] = useState('');
   const [initialMood, setInitialMood] = useState<'happy' | 'sad' | 'neutral' | null>(null);
 
-  // Auto-save timer ref
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -80,7 +78,6 @@ export default function JournalEditor() {
     loadEntry();
   }, [folderHandle, dateStr, router]);
 
-  // Auto-save function
   const autoSave = useCallback(async () => {
     if (!folderHandle || !title.trim() || !mood) {
       return;
@@ -118,7 +115,6 @@ export default function JournalEditor() {
     }
   }, [folderHandle, dateStr, title, body, mood, refreshEntries]);
 
-  // Debounced auto-save effect
   useEffect(() => {
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
@@ -142,7 +138,6 @@ export default function JournalEditor() {
     };
   }, [title, body, mood, initialTitle, initialBody, initialMood, autoSave, isPreviewMode]);
 
-  // Warn before closing tab with unsaved changes
   useEffect(() => {
     const hasUnsavedChanges = 
       (title !== initialTitle ||
@@ -168,7 +163,6 @@ export default function JournalEditor() {
   const formattedDate = format(date, 'EEEE, MMMM d, yyyy');
   const formattedShortDate = format(date, 'MMM d, yyyy');
 
-  // Calculate word count
   const tempDiv = typeof document !== 'undefined' ? document.createElement('div') : null;
   if (tempDiv) {
     tempDiv.innerHTML = body;
@@ -178,7 +172,6 @@ export default function JournalEditor() {
     var wordCount = 0;
   }
 
-  // Calculate reading time
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
   const handleManualSave = async () => {
@@ -258,38 +251,38 @@ export default function JournalEditor() {
   };
 
   const moodColors = {
-    happy: 'from-green-500/20 to-emerald-500/20',
-    neutral: 'from-yellow-500/20 to-amber-500/20',
-    sad: 'from-blue-500/20 to-indigo-500/20',
+    happy: 'from-sage/10 to-sage-light/5',
+    neutral: 'from-sand/10 to-sand-light/5',
+    sad: 'from-sky/10 to-sky-light/5',
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-serene flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-zinc-700 border-t-blue-500 rounded-full animate-spin"></div>
-          <div className="text-zinc-400 font-medium">Loading entry...</div>
+          <div className="w-12 h-12 spinner-serene rounded-full"></div>
+          <div className="text-warm-gray font-medium">Loading your thoughts...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800">
+    <div className="min-h-screen bg-gradient-serene">
       <Header
-        title={isExisting ? (isPreviewMode ? 'Reading' : 'Writing') : 'Writing'}
+        title={isExisting ? (isPreviewMode ? 'Reading' : 'Reflecting') : 'Reflecting'}
         showBackButton
         onBack={handleBack}
       />
 
       {isPreviewMode ? (
-        /* ========== PREVIEW MODE - Book-like Reading Experience ========== */
+        /* PREVIEW MODE */
         <main className="max-w-4xl mx-auto p-6 animate-fade-in">
-          {/* Mode Toggle - Floating Top Right */}
+          {/* Mode Toggle */}
           <div className="flex justify-end mb-6">
             <button
               onClick={() => setIsPreviewMode(false)}
-              className="flex items-center gap-2 glass text-zinc-100 font-medium py-2.5 px-5 rounded-full transition-all hover:scale-105 shadow-lg"
+              className="flex items-center gap-2 serene-card text-charcoal font-medium py-2.5 px-5 rounded-full transition-all hover:scale-105"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -299,39 +292,39 @@ export default function JournalEditor() {
           </div>
 
           {/* Book-like Entry Card */}
-          <article className="glass rounded-3xl shadow-2xl overflow-hidden backdrop-blur-xl border-2 border-zinc-700/30">
-            {/* Decorative Header with Mood Gradient */}
-            <div className={`h-2 bg-gradient-to-r ${mood ? moodColors[mood] : 'from-zinc-700 to-zinc-600'}`} />
+          <article className="serene-card rounded-3xl shadow-serene-lg overflow-hidden border-2 border-sage/10">
+            {/* Decorative Header */}
+            <div className={`h-2 bg-gradient-to-r ${mood ? moodColors[mood] : 'from-sage/20 to-sage-light/10'}`} />
             
             <div className="p-12">
               {/* Date Banner */}
-              <div className="flex items-center gap-4 mb-8 pb-6 border-b border-zinc-700/50">
-                <div className="text-center px-4 py-2 bg-zinc-800/50 rounded-lg">
-                  <div className="text-3xl font-bold text-zinc-100">{format(date, 'd')}</div>
-                  <div className="text-xs text-zinc-400 uppercase tracking-wider">{format(date, 'MMM')}</div>
+              <div className="flex items-center gap-4 mb-8 pb-6 border-b border-sage/10">
+                <div className="text-center px-4 py-2 bg-sage/8 rounded-lg">
+                  <div className="text-3xl font-bold text-charcoal">{format(date, 'd')}</div>
+                  <div className="text-xs text-warm-gray uppercase tracking-wider">{format(date, 'MMM')}</div>
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm text-zinc-400 uppercase tracking-wider mb-1">
+                  <div className="text-sm text-warm-gray uppercase tracking-wider mb-1">
                     {format(date, 'EEEE')}
                   </div>
-                  <div className="text-zinc-300 font-medium">{format(date, 'yyyy')}</div>
+                  <div className="text-charcoal font-medium">{format(date, 'yyyy')}</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-4xl">{mood && moodEmojis[mood]}</span>
                   <div className="text-right">
-                    <div className="text-xs text-zinc-400 uppercase tracking-wider">Mood</div>
-                    <div className="text-zinc-300 capitalize font-medium">{mood}</div>
+                    <div className="text-xs text-warm-gray uppercase tracking-wider">Mood</div>
+                    <div className="text-charcoal capitalize font-medium">{mood}</div>
                   </div>
                 </div>
               </div>
 
               {/* Title */}
-              <h1 className="text-4xl md:text-5xl font-bold text-zinc-50 mb-6 leading-tight tracking-tight">
+              <h1 className="text-4xl md:text-5xl font-bold text-charcoal mb-6 leading-tight tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
                 {title}
               </h1>
 
               {/* Reading Stats */}
-              <div className="flex items-center gap-6 mb-10 text-sm text-zinc-400">
+              <div className="flex items-center gap-6 mb-10 text-sm text-warm-gray">
                 <span className="flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -349,23 +342,23 @@ export default function JournalEditor() {
 
               {/* Decorative Divider */}
               <div className="flex items-center gap-4 mb-10">
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
-                <div className="w-2 h-2 rounded-full bg-zinc-600" />
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-sage/30 to-transparent" />
+                <div className="w-2 h-2 rounded-full bg-sage/40" />
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-sage/30 to-transparent" />
               </div>
 
-              {/* Content with Book Typography */}
+              {/* Content */}
               <div 
                 className="prose prose-invert max-w-none prose-lg"
                 dangerouslySetInnerHTML={{ __html: body }}
               />
 
               {/* Decorative Footer */}
-              <div className="mt-12 pt-8 border-t border-zinc-700/50 flex items-center justify-center">
-                <div className="flex items-center gap-2 text-zinc-500">
-                  <div className="w-1 h-1 rounded-full bg-zinc-600" />
-                  <div className="w-2 h-2 rounded-full bg-zinc-600" />
-                  <div className="w-1 h-1 rounded-full bg-zinc-600" />
+              <div className="mt-12 pt-8 border-t border-sage/10 flex items-center justify-center">
+                <div className="flex items-center gap-2 text-sage/40">
+                  <div className="w-1 h-1 rounded-full bg-sage/40" />
+                  <div className="w-2 h-2 rounded-full bg-sage/40" />
+                  <div className="w-1 h-1 rounded-full bg-sage/40" />
                 </div>
               </div>
             </div>
@@ -375,7 +368,7 @@ export default function JournalEditor() {
           <div className="mt-8 flex gap-4">
             <button
               onClick={() => router.push('/dashboard')}
-              className="flex-1 glass hover:bg-zinc-700/60 text-zinc-100 font-semibold py-4 px-6 rounded-2xl transition-all duration-200 backdrop-blur-sm"
+              className="flex-1 btn-secondary text-charcoal font-semibold py-4 px-6 rounded-2xl transition-all duration-300"
             >
               Back to Dashboard
             </button>
@@ -383,7 +376,7 @@ export default function JournalEditor() {
             {isExisting && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 font-semibold py-4 px-6 rounded-2xl transition-all duration-200"
+                className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-semibold py-4 px-6 rounded-2xl transition-all duration-300"
               >
                 Delete Entry
               </button>
@@ -391,38 +384,35 @@ export default function JournalEditor() {
           </div>
         </main>
       ) : (
-        /* ========== EDIT MODE - Premium Writing Experience ========== */
+        /* EDIT MODE */
         <main className="max-w-5xl mx-auto p-6 animate-fade-in">
           {/* Floating Status Bar */}
-          <div className="sticky top-4 z-10 mb-8">
-            <div className="glass rounded-2xl p-4 backdrop-blur-xl shadow-xl border border-zinc-700/30">
+          <div className="sticky top-20 z-10 mb-8">
+            <div className="serene-card rounded-2xl p-4 shadow-serene-lg border border-sage/20">
               <div className="flex items-center justify-between">
                 {/* Left: Date */}
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center">
-                    <span className="text-lg">📝</span>
+                  <div className="w-10 h-10 rounded-lg bg-sage/15 border border-sage/20 flex items-center justify-center">
+                    <span className="text-lg">🌿</span>
                   </div>
                   <div>
-                    <div className="text-xs text-zinc-400 uppercase tracking-wider">
+                    <div className="text-xs text-warm-gray uppercase tracking-wider">
                       {isExisting ? 'Editing' : 'New Entry'}
                     </div>
-                    <div className="text-sm font-semibold text-zinc-100">{formattedShortDate}</div>
+                    <div className="text-sm font-semibold text-charcoal">{formattedShortDate}</div>
                   </div>
                 </div>
 
                 {/* Center: Save Status */}
                 <div className="flex items-center gap-2 text-sm min-w-[140px] justify-center">
                   {saveStatus === 'saving' && (
-                    <div className="flex items-center gap-2 text-blue-400 animate-fade-in">
-                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                    <div className="flex items-center gap-2 text-sage animate-fade-in">
+                      <div className="w-4 h-4 spinner-serene rounded-full"></div>
                       <span className="font-medium">Saving...</span>
                     </div>
                   )}
                   {saveStatus === 'saved' && (
-                    <div className="flex items-center gap-2 text-green-400 animate-fade-in">
+                    <div className="flex items-center gap-2 text-sage-dark animate-fade-in">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
@@ -430,7 +420,7 @@ export default function JournalEditor() {
                     </div>
                   )}
                   {saveStatus === 'error' && (
-                    <div className="flex items-center gap-2 text-red-400 animate-fade-in">
+                    <div className="flex items-center gap-2 text-red-600 animate-fade-in">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -438,7 +428,7 @@ export default function JournalEditor() {
                     </div>
                   )}
                   {saveStatus === 'idle' && lastSavedTime && (
-                    <div className="flex items-center gap-2 text-zinc-400">
+                    <div className="flex items-center gap-2 text-warm-gray">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
@@ -447,18 +437,18 @@ export default function JournalEditor() {
                   )}
                 </div>
 
-                {/* Right: Preview Toggle */}
+                {/* Right: Preview Toggle & Stats */}
                 <div className="flex items-center gap-3">
                   {wordCount > 0 && (
                     <div className="text-right mr-2">
-                      <div className="text-xs text-zinc-400">{wordCount} words</div>
-                      <div className="text-xs text-zinc-500">{readingTime} min read</div>
+                      <div className="text-xs text-warm-gray">{wordCount} words</div>
+                      <div className="text-xs text-light-muted">{readingTime} min read</div>
                     </div>
                   )}
                   {isExisting && (
                     <button
                       onClick={() => setIsPreviewMode(true)}
-                      className="flex items-center gap-2 bg-zinc-800/60 hover:bg-zinc-700/60 text-zinc-100 font-medium py-2 px-4 rounded-lg transition-all border border-zinc-700/50"
+                      className="flex items-center gap-2 btn-secondary text-charcoal font-medium py-2 px-4 rounded-lg transition-all"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -472,20 +462,20 @@ export default function JournalEditor() {
             </div>
           </div>
 
-          {/* Writing Prompt (only when empty) */}
+          {/* Writing Prompt */}
           {!title && !body && (
-            <div className="mb-8 glass rounded-2xl p-6 backdrop-blur-xl border border-blue-500/20 bg-gradient-to-r from-blue-900/10 to-purple-900/10">
+            <div className="mb-8 serene-card rounded-2xl p-6 border border-sage/15 bg-gradient-to-r from-sage/5 to-sky/5">
               <div className="flex items-start gap-4">
                 <div className="text-3xl">💭</div>
                 <div className="flex-1">
-                  <div className="text-sm font-semibold text-blue-400 mb-1">Writing Prompt</div>
-                  <p className="text-zinc-300 text-lg italic leading-relaxed">{randomPrompt}</p>
+                  <div className="text-sm font-semibold text-sage-dark mb-1">Reflection Prompt</div>
+                  <p className="text-charcoal text-lg italic leading-relaxed">{randomPrompt}</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Title Input - Larger and More Prominent */}
+          {/* Title Input */}
           <div className="mb-8">
             <input
               type="text"
@@ -494,25 +484,26 @@ export default function JournalEditor() {
                 setTitle(e.target.value);
                 setError('');
               }}
-              placeholder="Give your entry a title..."
-              className="w-full bg-transparent border-0 border-b-2 border-zinc-700/50 focus:border-blue-500/50 text-zinc-100 px-0 py-4 focus:outline-none transition-all text-3xl md:text-4xl font-bold placeholder:text-zinc-700 tracking-tight"
+              placeholder="Title your reflection..."
+              className="w-full bg-transparent border-0 border-b-2 border-sage/20 focus:border-sage text-charcoal px-0 py-4 focus:outline-none transition-all text-3xl md:text-4xl font-bold placeholder:text-light-muted tracking-tight"
+              style={{ fontFamily: 'var(--font-display)' }}
               autoFocus={!isExisting}
             />
           </div>
 
-          {/* Rich Text Editor with Enhanced Styling */}
+          {/* Rich Text Editor */}
           <div className="mb-6">
             <RichTextEditor content={body} onChange={setBody} />
           </div>
 
-          {/* Mood Selector - More Visual */}
+          {/* Mood Selector */}
           <div className="mb-8">
             <MoodSelector selected={mood} onChange={setMood} />
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-900/30 border border-red-800 text-red-400 px-6 py-4 rounded-2xl mb-6 animate-slide-in flex items-center gap-3">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-6 animate-slide-in flex items-center gap-3">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -520,12 +511,12 @@ export default function JournalEditor() {
             </div>
           )}
 
-          {/* Delete Button (for existing entries) */}
+          {/* Delete Button */}
           {isExisting && (
             <div className="mb-8">
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="text-red-400 hover:text-red-300 text-sm transition-colors flex items-center gap-2 font-medium"
+                className="text-red-600 hover:text-red-700 text-sm transition-colors flex items-center gap-2 font-medium"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -535,27 +526,24 @@ export default function JournalEditor() {
             </div>
           )}
 
-          {/* Action Buttons - Floating at Bottom */}
-          <div className="sticky bottom-6 glass rounded-2xl p-4 backdrop-blur-xl shadow-2xl border border-zinc-700/30">
+          {/* Action Buttons */}
+          <div className="sticky bottom-6 serene-card rounded-2xl p-4 shadow-serene-lg border border-sage/20">
             <div className="flex gap-4">
               <button
                 onClick={handleCancel}
                 disabled={saveStatus === 'saving'}
-                className="flex-1 bg-zinc-700/60 hover:bg-zinc-600/60 disabled:bg-zinc-800/50 disabled:cursor-not-allowed text-zinc-100 font-semibold py-4 px-6 rounded-xl transition-all duration-200 backdrop-blur-sm"
+                className="flex-1 btn-secondary disabled:opacity-50 disabled:cursor-not-allowed text-charcoal font-semibold py-4 px-6 rounded-xl transition-all duration-300"
               >
                 Cancel
               </button>
               <button
                 onClick={handleManualSave}
                 disabled={saveStatus === 'saving' || !title.trim() || !mood}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 shadow-xl shadow-blue-900/30 hover:shadow-2xl hover:shadow-blue-900/40 hover:-translate-y-0.5 disabled:shadow-none disabled:hover:translate-y-0"
+                className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3"
               >
                 {saveStatus === 'saving' ? (
                   <>
-                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     Saving...
                   </>
                 ) : (
@@ -574,25 +562,25 @@ export default function JournalEditor() {
 
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="glass rounded-3xl p-8 max-w-md w-full animate-scale-in shadow-2xl">
+        <div className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="serene-card rounded-3xl p-8 max-w-md w-full animate-scale-in shadow-serene-lg">
             <div className="text-5xl mb-4 text-center">🗑️</div>
-            <h3 className="text-2xl font-bold text-zinc-100 mb-3 tracking-tight text-center">Delete Entry?</h3>
-            <p className="text-zinc-400 mb-8 leading-relaxed text-center">
-              Are you sure you want to delete this journal entry? This action cannot be undone.
+            <h3 className="text-2xl font-bold text-charcoal mb-3 tracking-tight text-center" style={{ fontFamily: 'var(--font-display)' }}>Delete Entry?</h3>
+            <p className="text-warm-gray mb-8 leading-relaxed text-center">
+              Are you sure you want to delete this reflection? This action cannot be undone.
             </p>
             <div className="flex gap-4">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={isDeleting}
-                className="flex-1 glass hover:bg-zinc-600/60 disabled:bg-zinc-800/50 disabled:cursor-not-allowed text-zinc-100 font-semibold py-3 px-6 rounded-xl transition-all backdrop-blur-sm"
+                className="flex-1 btn-secondary disabled:opacity-50 disabled:cursor-not-allowed text-charcoal font-semibold py-3 px-6 rounded-xl transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="flex-1 bg-red-600 hover:bg-red-500 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg shadow-red-900/30"
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all"
               >
                 {isDeleting ? 'Deleting...' : 'Delete Entry'}
               </button>
@@ -603,23 +591,23 @@ export default function JournalEditor() {
 
       {/* Unsaved Changes Dialog */}
       {showUnsavedDialog && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="glass rounded-3xl p-8 max-w-md w-full animate-scale-in shadow-2xl">
+        <div className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="serene-card rounded-3xl p-8 max-w-md w-full animate-scale-in shadow-serene-lg">
             <div className="text-5xl mb-4 text-center">⚠️</div>
-            <h3 className="text-2xl font-bold text-zinc-100 mb-3 tracking-tight text-center">Unsaved Changes</h3>
-            <p className="text-zinc-400 mb-8 leading-relaxed text-center">
+            <h3 className="text-2xl font-bold text-charcoal mb-3 tracking-tight text-center" style={{ fontFamily: 'var(--font-display)' }}>Unsaved Changes</h3>
+            <p className="text-warm-gray mb-8 leading-relaxed text-center">
               You have unsaved changes. Are you sure you want to leave without saving?
             </p>
             <div className="flex gap-4">
               <button
                 onClick={() => setShowUnsavedDialog(false)}
-                className="flex-1 glass hover:bg-zinc-600/60 text-zinc-100 font-semibold py-3 px-6 rounded-xl transition-all backdrop-blur-sm"
+                className="flex-1 btn-secondary text-charcoal font-semibold py-3 px-6 rounded-xl transition-all"
               >
                 Keep Editing
               </button>
               <button
                 onClick={() => router.push('/dashboard')}
-                className="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg shadow-red-900/30"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl transition-all"
               >
                 Discard Changes
               </button>

@@ -16,7 +16,46 @@ export default function Dashboard() {
   const [isMounted, setIsMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [greeting, setGreeting] = useState('');
-  const [isLoadingSearch, setIsLoadingSearch] = useState(false);
+
+  const [searchableEntries, setSearchableEntries] = useState<Array<{
+    dateStr: string;
+    title: string;
+    mood: 'happy' | 'neutral' | 'sad';
+    timestamp: string;
+    content: string;
+  }>>([]);
+
+  // Move fuse.js setup before early returns
+  const fuse = useMemo(() => {
+    return new Fuse(searchableEntries, {
+      keys: [
+        { name: 'title', weight: 2 },
+        { name: 'content', weight: 1 },
+      ],
+      threshold: 0.3,
+      includeScore: true,
+      minMatchCharLength: 2,
+      ignoreLocation: true,
+    });
+  }, [searchableEntries]);
+
+  // Move filtered entries logic before early returns
+  const filteredEntries = useMemo(() => {
+    if (!entries) return [];
+    
+    if (!searchQuery.trim()) {
+      return Array.from(entries.entries())
+        .sort((a, b) => b[1].timestamp.localeCompare(a[1].timestamp));
+    }
+
+    const results = fuse.search(searchQuery);
+    
+    return results.map(result => {
+      const dateStr = result.item.dateStr;
+      const entry = entries.get(dateStr);
+      return [dateStr, entry] as [string, typeof entry];
+    }).filter((item): item is [string, NonNullable<typeof item[1]>] => item[1] !== undefined);
+  }, [searchQuery, entries, fuse]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -33,16 +72,6 @@ export default function Dashboard() {
     }
   }, [folderHandle, userConfig, router, isMounted]);
 
-  // Prepare searchable entries with content
-  const [searchableEntries, setSearchableEntries] = useState<Array<{
-    dateStr: string;
-    title: string;
-    mood: 'happy' | 'neutral' | 'sad';
-    timestamp: string;
-    content: string;
-  }>>([]);
-
-  // Load entry contents for search (on mount and when entries change)
   useEffect(() => {
     async function loadEntriesForSearch() {
       if (!folderHandle) return;
@@ -51,7 +80,6 @@ export default function Dashboard() {
         Array.from(entries.entries()).map(async ([dateStr, entry]) => {
           try {
             const fullEntry = await readEntry(folderHandle, dateStr);
-            // Strip HTML tags from content for search
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = fullEntry?.body || '';
             const textContent = tempDiv.textContent || tempDiv.innerText || '';
@@ -84,44 +112,10 @@ export default function Dashboard() {
     }
   }, [entries, folderHandle]);
 
-  // Configure Fuse.js
-  const fuse = useMemo(() => {
-    return new Fuse(searchableEntries, {
-      keys: [
-        { name: 'title', weight: 2 }, // Title is more important
-        { name: 'content', weight: 1 },
-      ],
-      threshold: 0.3, // 0 = perfect match, 1 = match anything
-      includeScore: true,
-      minMatchCharLength: 2,
-      ignoreLocation: true, // Search entire string, not just beginning
-    });
-  }, [searchableEntries]);
-
-  // Enhanced search with Fuse.js
-  const filteredEntries = useMemo(() => {
-    if (!searchQuery.trim()) {
-      // No search query - return all entries sorted by date
-      return Array.from(entries.entries())
-        .sort((a, b) => b[1].timestamp.localeCompare(a[1].timestamp));
-    }
-
-    // Use Fuse.js for fuzzy search
-    const results = fuse.search(searchQuery);
-    
-    // Convert Fuse results back to entry format
-    return results.map(result => {
-      const dateStr = result.item.dateStr;
-      const entry = entries.get(dateStr);
-      return [dateStr, entry] as [string, typeof entry];
-    }).filter((item): item is [string, NonNullable<typeof item[1]>] => item[1] !== undefined);
-  }, [searchQuery, entries, fuse]);
-
   if (!isMounted || !folderHandle || !userConfig) {
     return null;
   }
 
-  // Calculate stats
   const totalEntries = entries.size;
   
   const calculateStreak = () => {
@@ -229,7 +223,6 @@ export default function Dashboard() {
 
   const last7Days = getLast7Days();
 
-  // Get search preview snippet
   const getSearchPreview = (dateStr: string, maxLength: number = 100): string => {
     const searchableEntry = searchableEntries.find(e => e.dateStr === dateStr);
     if (!searchableEntry || !searchQuery.trim()) return '';
@@ -251,34 +244,34 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800">
-      <Header title="📔 Journal" />
+    <div className="min-h-screen bg-gradient-serene">
+      <Header title="Dashboard" />
 
       <main className="max-w-7xl mx-auto p-6">
-        {/* Welcome Section with Quick Stats */}
+        {/* Welcome Section */}
         <div className="mb-10">
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
-              <h2 className="text-4xl md:text-5xl font-bold text-zinc-100 mb-2 tracking-tight animate-fade-in">
-                {greeting}, {userConfig.name}! 👋
+              <h2 className="text-4xl md:text-5xl font-bold text-charcoal mb-2 tracking-tight animate-fade-in" style={{ fontFamily: 'var(--font-display)' }}>
+                {greeting}, {userConfig.name}
               </h2>
-              <p className="text-zinc-400 text-lg font-medium animate-slide-in">
+              <p className="text-warm-gray text-lg font-medium animate-slide-in">
                 {format(new Date(), 'EEEE, MMMM d, yyyy')}
               </p>
             </div>
 
-            <div className="glass rounded-2xl p-6 backdrop-blur-xl text-center min-w-[160px]">
-              <div className="text-sm text-zinc-400 mb-1 uppercase tracking-wider">This Week</div>
-              <div className="text-4xl font-bold text-blue-400 mb-1">{thisWeekEntries}</div>
-              <div className="text-xs text-zinc-500">entries written</div>
+            <div className="serene-card rounded-2xl p-6 text-center min-w-[160px]">
+              <div className="text-sm text-warm-gray mb-1 uppercase tracking-wider">This Week</div>
+              <div className="text-4xl font-bold text-sage mb-1">{thisWeekEntries}</div>
+              <div className="text-xs text-light-muted">entries written</div>
             </div>
           </div>
 
           {/* Week Activity Heatmap */}
-          <div className="glass rounded-2xl p-6 backdrop-blur-xl mb-6">
+          <div className="serene-card rounded-2xl p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Your Week</h3>
-              <div className="text-xs text-zinc-500">Last 7 days</div>
+              <h3 className="text-sm font-semibold text-charcoal uppercase tracking-wider">Your Week</h3>
+              <div className="text-xs text-light-muted">Last 7 days</div>
             </div>
             <div className="grid grid-cols-7 gap-2">
               {last7Days.map((day, idx) => (
@@ -287,36 +280,36 @@ export default function Dashboard() {
                   onClick={() => day.hasEntry && handleDateClick(parse(day.dateStr, 'yyyy-MM-dd', new Date()))}
                   className={`aspect-square rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 ${
                     day.hasEntry
-                      ? 'bg-blue-600/20 border-2 border-blue-500/30 hover:bg-blue-600/30 hover:scale-105 cursor-pointer'
-                      : 'bg-zinc-800/30 border-2 border-zinc-700/20'
+                      ? 'bg-sage/10 border-2 border-sage/30 hover:bg-sage/20 hover:scale-105 cursor-pointer'
+                      : 'bg-light-gray border-2 border-sage/10'
                   }`}
                 >
-                  <div className="text-xs text-zinc-400 font-medium">{day.date}</div>
+                  <div className="text-xs text-warm-gray font-medium">{day.date}</div>
                   {day.mood && <div className="text-2xl">{moodEmojis[day.mood]}</div>}
-                  {!day.mood && <div className="w-2 h-2 rounded-full bg-zinc-600" />}
+                  {!day.mood && <div className="w-2 h-2 rounded-full bg-light-muted" />}
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Enhanced Search Bar */}
+        {/* Search Bar */}
         <div className="mb-8 animate-slide-in" style={{ animationDelay: '0.1s' }}>
           <div className="relative">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search titles and content..."
-              className="w-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-100 pl-12 pr-5 py-4 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-zinc-500 backdrop-blur-sm"
+              placeholder="Search your reflections..."
+              className="w-full bg-soft-white border border-sage/20 text-charcoal pl-12 pr-5 py-4 rounded-xl focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/10 transition-all placeholder:text-light-muted shadow-serene"
             />
-            <svg className="w-5 h-5 text-zinc-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-warm-gray absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-100 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-gray hover:text-charcoal transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -326,11 +319,11 @@ export default function Dashboard() {
           </div>
           {searchQuery && (
             <div className="flex items-center gap-2 mt-2">
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-warm-gray">
                 Found {filteredEntries.length} {filteredEntries.length === 1 ? 'entry' : 'entries'}
               </p>
               {filteredEntries.length > 0 && (
-                <div className="flex items-center gap-1 text-xs text-zinc-500">
+                <div className="flex items-center gap-1 text-xs text-light-muted">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -345,49 +338,49 @@ export default function Dashboard() {
           <>
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10 animate-scale-in" style={{ animationDelay: '0.2s' }}>
-              <div className="bg-gradient-to-br from-purple-900/40 to-purple-800/20 border border-purple-700/30 rounded-2xl p-6 text-center card-hover backdrop-blur-sm">
+              <div className="serene-card bg-gradient-to-br from-sage/8 to-sage-light/5 rounded-2xl p-6 text-center card-hover">
                 <div className="text-4xl mb-3">📔</div>
-                <div className="text-3xl font-bold text-purple-300 mb-1">{totalEntries}</div>
-                <div className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Total Entries</div>
+                <div className="text-3xl font-bold text-sage-dark mb-1">{totalEntries}</div>
+                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Total Entries</div>
               </div>
 
-              <div className="bg-gradient-to-br from-orange-900/40 to-orange-800/20 border border-orange-700/30 rounded-2xl p-6 text-center card-hover backdrop-blur-sm">
+              <div className="serene-card bg-gradient-to-br from-sand/15 to-sand-light/5 rounded-2xl p-6 text-center card-hover">
                 <div className="text-4xl mb-3">🔥</div>
-                <div className="text-3xl font-bold text-orange-400 mb-1">{streak}</div>
-                <div className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Day Streak</div>
+                <div className="text-3xl font-bold text-sand-dark mb-1">{streak}</div>
+                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Day Streak</div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-900/40 to-green-800/20 border border-green-700/30 rounded-2xl p-6 text-center card-hover backdrop-blur-sm">
+              <div className="serene-card bg-gradient-to-br from-sage/12 to-sage-light/8 rounded-2xl p-6 text-center card-hover">
                 <div className="text-4xl mb-3">😊</div>
-                <div className="text-3xl font-bold text-green-400 mb-1">{moodCounts.happy}</div>
-                <div className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Happy Days</div>
+                <div className="text-3xl font-bold text-sage-dark mb-1">{moodCounts.happy}</div>
+                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Happy Days</div>
               </div>
 
-              <div className="bg-gradient-to-br from-yellow-900/40 to-yellow-800/20 border border-yellow-700/30 rounded-2xl p-6 text-center card-hover backdrop-blur-sm">
+              <div className="serene-card bg-gradient-to-br from-sand/12 to-sand-light/8 rounded-2xl p-6 text-center card-hover">
                 <div className="text-4xl mb-3">😐</div>
-                <div className="text-3xl font-bold text-yellow-400 mb-1">{moodCounts.neutral}</div>
-                <div className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Neutral Days</div>
+                <div className="text-3xl font-bold text-sand-dark mb-1">{moodCounts.neutral}</div>
+                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Neutral Days</div>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-700/30 rounded-2xl p-6 text-center card-hover backdrop-blur-sm">
+              <div className="serene-card bg-gradient-to-br from-sky/12 to-sky-light/8 rounded-2xl p-6 text-center card-hover">
                 <div className="text-4xl mb-3">😢</div>
-                <div className="text-3xl font-bold text-blue-400 mb-1">{moodCounts.sad}</div>
-                <div className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Sad Days</div>
+                <div className="text-3xl font-bold text-sky-dark mb-1">{moodCounts.sad}</div>
+                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Sad Days</div>
               </div>
             </div>
 
             {/* Calendar Section */}
-            <div className="glass rounded-2xl p-8 mb-8 backdrop-blur-xl animate-slide-in" style={{ animationDelay: '0.3s' }}>
+            <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.3s' }}>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-2xl font-bold text-zinc-100 tracking-tight mb-1">Your Journal Calendar</h3>
-                  <p className="text-sm text-zinc-400 font-medium">
-                    Click on any date to view or create a journal entry.
+                  <h3 className="text-2xl font-bold text-charcoal tracking-tight mb-1" style={{ fontFamily: 'var(--font-display)' }}>Your Journey</h3>
+                  <p className="text-sm text-warm-gray font-medium">
+                    Click any date to reflect or create an entry
                   </p>
                 </div>
                 <button
                   onClick={goToToday}
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-5 rounded-xl transition-all duration-200 text-sm shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-900/40 hover:-translate-y-0.5"
+                  className="btn-secondary text-charcoal font-semibold py-2.5 px-5 rounded-xl transition-all duration-200 text-sm"
                 >
                   Today
                 </button>
@@ -404,39 +397,39 @@ export default function Dashboard() {
             {!hasEntryToday && (
               <button
                 onClick={handleWriteToday}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold py-6 px-6 rounded-2xl transition-all duration-200 mb-8 flex items-center justify-center gap-3 shadow-xl shadow-blue-900/30 hover:shadow-2xl hover:shadow-blue-900/40 hover:-translate-y-1 animate-scale-in" 
+                className="w-full btn-primary text-white font-semibold py-6 px-6 rounded-2xl transition-all duration-300 mb-8 flex items-center justify-center gap-3 animate-scale-in" 
                 style={{ animationDelay: '0.4s' }}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                 </svg>
-                <span className="text-lg">Write Today's Entry</span>
+                <span className="text-lg">Create Today's Entry</span>
               </button>
             )}
           </>
         )}
 
         {/* Recent/Search Results */}
-        <div className="glass rounded-2xl p-8 mb-8 backdrop-blur-xl animate-slide-in" style={{ animationDelay: '0.5s' }}>
-          <h3 className="text-2xl font-bold text-zinc-100 mb-6 tracking-tight">
-            {searchQuery ? 'Search Results' : 'Recent Entries'}
+        <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.5s' }}>
+          <h3 className="text-2xl font-bold text-charcoal mb-6 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+            {searchQuery ? 'Search Results' : 'Recent Reflections'}
           </h3>
           
           {recentEntries.length === 0 ? (
             <div className="text-center py-20">
-              <div className="text-7xl mb-6 animate-bounce" style={{ animationDuration: '2s' }}>
-                {searchQuery ? '🔍' : '✨'}
+              <div className="text-7xl mb-6 animate-gentle-float">
+                {searchQuery ? '🔍' : '🌸'}
               </div>
-              <p className="text-zinc-300 text-2xl mb-3 font-semibold">
-                {searchQuery ? 'No entries found' : 'No journal entries yet'}
+              <p className="text-charcoal text-2xl mb-3 font-semibold">
+                {searchQuery ? 'No entries found' : 'Begin your peaceful practice'}
               </p>
-              <p className="text-zinc-500 mb-8">
-                {searchQuery ? 'Try different keywords or check for typos' : 'Start your journaling journey today'}
+              <p className="text-warm-gray mb-8">
+                {searchQuery ? 'Try different keywords' : 'Your journey starts with a single thought'}
               </p>
               {!searchQuery && (
                 <button
                   onClick={handleWriteToday}
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-900/40 hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 btn-primary text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -453,25 +446,25 @@ export default function Dashboard() {
                   <button
                     key={dateStr}
                     onClick={() => handleDateClick(parse(dateStr, 'yyyy-MM-dd', new Date()))}
-                    className="w-full bg-zinc-800/40 hover:bg-zinc-700/60 border border-zinc-700/50 hover:border-zinc-600/50 rounded-xl p-5 transition-all duration-200 text-left flex items-start gap-4 card-hover backdrop-blur-sm group"
+                    className="w-full bg-soft-white hover:bg-sage-light/30 border border-sage/15 hover:border-sage/30 rounded-xl p-5 transition-all duration-300 text-left flex items-start gap-4 card-hover group"
                   >
-                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-zinc-900/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-light-gray flex items-center justify-center group-hover:scale-110 transition-transform">
                       <span className="text-3xl">{moodEmojis[entry.mood]}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-zinc-100 font-semibold truncate text-lg mb-1 group-hover:text-blue-400 transition-colors">
+                      <h4 className="text-charcoal font-semibold truncate text-lg mb-1 group-hover:text-sage-dark transition-colors">
                         {entry.title}
                       </h4>
-                      <p className="text-zinc-400 text-sm font-medium mb-2">
+                      <p className="text-warm-gray text-sm font-medium mb-2">
                         {format(parse(dateStr, 'yyyy-MM-dd', new Date()), 'MMMM d, yyyy • EEEE')}
                       </p>
                       {preview && (
-                        <p className="text-zinc-500 text-xs leading-relaxed line-clamp-2">
+                        <p className="text-light-muted text-xs leading-relaxed line-clamp-2">
                           {preview}
                         </p>
                       )}
                     </div>
-                    <svg className="w-5 h-5 text-zinc-500 flex-shrink-0 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-light-muted flex-shrink-0 group-hover:text-sage group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
@@ -481,16 +474,16 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Footer Actions */}
+        {/* Footer */}
         <div className="text-center flex items-center justify-center gap-6 text-sm">
           <button
             onClick={handleChangeFolder}
-            className="text-zinc-500 hover:text-zinc-300 font-medium transition-colors"
+            className="text-warm-gray hover:text-charcoal font-medium transition-colors"
           >
             Select Different Folder
           </button>
-          <span className="text-zinc-700">•</span>
-          <span className="text-zinc-500">
+          <span className="text-light-muted">•</span>
+          <span className="text-warm-gray">
             {totalEntries} {totalEntries === 1 ? 'entry' : 'entries'} • {streak} day streak
           </span>
         </div>
@@ -499,7 +492,7 @@ export default function Dashboard() {
       {/* Floating Action Button */}
       <button
         onClick={handleWriteToday}
-        className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-full shadow-2xl flex items-center justify-center text-white hover:scale-110 transition-all duration-200 z-50 animate-scale-in"
+        className="fixed bottom-8 right-8 w-16 h-16 btn-primary text-white rounded-full shadow-serene-lg hover:shadow-serene-lg hover:scale-110 flex items-center justify-center transition-all duration-300 z-50 animate-scale-in"
         style={{ animationDelay: '0.6s' }}
         title="Write new entry"
       >

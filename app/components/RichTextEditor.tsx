@@ -25,12 +25,11 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-invert max-w-none min-h-[300px] focus:outline-none',
+        class: 'prose prose-serene max-w-none min-h-[300px] focus:outline-none px-2 py-1',
       },
     },
   });
 
-  // Update editor content when prop changes
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
       editor.commands.setContent(content);
@@ -39,9 +38,9 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
 
   if (!isClient) {
     return (
-      <div className="bg-zinc-800/60 border border-zinc-700/50 rounded-xl p-4 backdrop-blur-sm">
+      <div className="serene-card rounded-xl p-4">
         <div className="flex items-center justify-center py-8">
-          <div className="w-8 h-8 border-4 border-zinc-700 border-t-blue-500 rounded-full animate-spin"></div>
+          <div className="w-8 h-8 spinner-serene rounded-full"></div>
         </div>
       </div>
     );
@@ -49,9 +48,9 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
 
   if (!editor) {
     return (
-      <div className="bg-zinc-800/60 border border-zinc-700/50 rounded-xl p-4 backdrop-blur-sm">
+      <div className="serene-card rounded-xl p-4">
         <div className="flex items-center justify-center py-8">
-          <div className="w-8 h-8 border-4 border-zinc-700 border-t-blue-500 rounded-full animate-spin"></div>
+          <div className="w-8 h-8 spinner-serene rounded-full"></div>
         </div>
       </div>
     );
@@ -69,8 +68,10 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
     <button
       onClick={onClick}
       type="button"
-      className={`p-2 rounded transition-colors ${
-        isActive ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100'
+      className={`p-2.5 rounded-lg transition-all duration-200 ${
+        isActive 
+          ? 'bg-sage/15 text-charcoal' 
+          : 'text-warm-gray hover:bg-sage/8 hover:text-charcoal'
       }`}
     >
       {children}
@@ -78,9 +79,9 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
   );
 
   return (
-    <div className="bg-zinc-800/60 border border-zinc-700/50 rounded-xl overflow-hidden backdrop-blur-sm">
+    <div className="serene-card rounded-xl overflow-hidden">
       {/* Toolbar */}
-      <div className="border-b border-zinc-700/50 p-2 flex items-center gap-1 flex-wrap">
+      <div className="border-b border-sage/10 p-3 flex items-center gap-1 flex-wrap bg-light-gray/30">
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           isActive={editor.isActive('bold')}
@@ -111,7 +112,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           </svg>
         </ToolbarButton>
 
-        <div className="w-px h-6 bg-zinc-700 mx-1" />
+        <div className="w-px h-6 bg-sage/20 mx-1" />
 
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
@@ -120,7 +121,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           <span className="font-bold text-sm">H</span>
         </ToolbarButton>
 
-        <div className="w-px h-6 bg-zinc-700 mx-1" />
+        <div className="w-px h-6 bg-sage/20 mx-1" />
 
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -159,7 +160,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           </svg>
         </ToolbarButton>
 
-        <div className="w-px h-6 bg-zinc-700 mx-1" />
+        <div className="w-px h-6 bg-sage/20 mx-1" />
 
         <ToolbarButton
           onClick={() => editor.chain().focus().undo().run()}
@@ -181,7 +182,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
       </div>
 
       {/* Editor Content */}
-      <div className="p-4">
+      <div className="p-6 bg-soft-white">
         <EditorContent editor={editor} />
       </div>
     </div>

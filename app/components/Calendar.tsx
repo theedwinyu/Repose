@@ -58,7 +58,7 @@ export default function CalendarComponent({
   if (!isClient || !Calendar) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-8 h-8 border-4 border-zinc-700 border-t-blue-500 rounded-full animate-spin"></div>
+        <div className="w-8 h-8 spinner-serene rounded-full"></div>
       </div>
     );
   }

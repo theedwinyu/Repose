@@ -1,68 +1,93 @@
-# My Journal - Personal Journal App
+# Repose - Your Serene Journaling Space
 
-A sleek, dark-mode journal application built with Next.js that stores entries locally on your computer using the File System Access API. No backend server or database needed - your data stays private and under your control.
+A peaceful, private journaling app built with Next.js that stores your reflections locally on your computer using the File System Access API. No backend server or database needed - your thoughts stay safe and under your control.
 
-## Features
+## ✨ Philosophy
 
-- 📔 **Local Storage**: All journal entries are stored directly on your computer
-- 🎨 **Dark Mode**: Beautiful, easy-on-the-eyes dark interface
-- 📅 **Calendar View**: Visualize your journaling journey with a mood-enhanced calendar
-- 😊 **Mood Tracking**: Track your emotional state with each entry
-- 📊 **Statistics**: View your journaling stats including streaks and mood counts
-- ✍️ **Rich Text Editor**: Full-featured editor with formatting options
-- 💾 **Auto-Save**: Automatic saving every 2.5 seconds while editing
-- 👁️ **Preview Mode**: Read-only view for reviewing past entries
-- 🔍 **Search**: Quickly find entries by title
-- 🔒 **Privacy-First**: No cloud sync, no data collection - everything stays on your device
+**Repose** embodies the art of mindful reflection. With calming colors, gentle animations, and thoughtful design, every interaction is crafted to create a serene space where your thoughts can breathe.
 
-## Browser Requirements
+## 🌿 Features
 
-This app requires the **File System Access API**, which is currently only available in:
+- 🔒 **Private & Local**: All entries stored directly on your device
+- 🎨 **Serene Design**: Calming sage, sky, and lavender color palette
+- 📅 **Peaceful Calendar**: Visualize your journey with mood-enhanced dates
+- 😊 **Mood Tracking**: Track your emotional landscape
+- 📊 **Mindful Stats**: View streaks and patterns in your practice
+- ✍️ **Beautiful Editor**: Serif typography and rich formatting
+- 💾 **Auto-Save**: Seamless preservation of your thoughts
+- 👁️ **Reading Mode**: Book-like view for reflection
+- 🔍 **Smart Search**: Find entries by title or content
+- 🌸 **No Cloud**: Your words stay with you, always
+
+## 🖥️ Browser Requirements
+
+Repose requires the **File System Access API**, available in:
 - Google Chrome (version 86+)
 - Microsoft Edge (version 86+)
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Installation
 
-1. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Run the development server:
+### Run Development Server
+
 ```bash
 npm run dev
 ```
 
-3. Open [http://localhost:3000](http://localhost:3000) in Chrome or Edge
+Open [http://localhost:3000](http://localhost:3000) in Chrome or Edge
 
 ### First Time Setup
 
-1. Click "Select Journal Folder" to choose where your journal entries will be stored
-2. Enter your name
-3. Click "Start Journaling"
-4. Begin writing your first entry!
+1. Click "Select Your Journal Folder"
+2. Choose a peaceful location for your entries
+3. Enter your name
+4. Click "Begin Your Journey"
+5. Start your first reflection
 
-### Returning Users
+### Returning to Repose
 
-When you return to the app:
-1. Click "Select Journal Folder"
+When you return:
+1. Click "Select Your Journal Folder"
 2. Choose your existing journal folder
-3. Your name and all entries will automatically load
+3. Your name and all entries load automatically
 
-This one-click process is required each visit for security, but your folder selection remembers your configuration.
+This one-click process ensures your privacy through browser security.
 
-## How It Works
+## 🎨 Design Philosophy
+
+### Visual Language
+- **Soft Sage**: Primary brand color for growth and calm
+- **Gentle Sky**: Peaceful blue for serenity
+- **Warm Sand**: Natural, grounding accent
+- **Misty Lavender**: Mindful purple for reflection
+
+### Typography
+- **Display**: Playfair Display for elegance
+- **Interface**: Inter for clarity
+- **Content**: Merriweather for readability
+
+### Motion
+- Gentle floating animations (6s)
+- Soft transitions (300-600ms)
+- Subtle breathing effects
+- Peaceful, never jarring
+
+## 📂 How It Works
 
 ### File Structure
 
-When you select a folder, the app creates the following files:
+When you select a folder, Repose creates:
+
 ```
 your-journal-folder/
-├── config.json                 # Stores your name
-├── 2024-01-15.json            # Entry metadata (title, mood, timestamp)
-├── 2024-01-15.html            # Entry content (rich text HTML)
+├── config.json                 # Your name
+├── 2024-01-15.json            # Entry metadata
+├── 2024-01-15.html            # Entry content
 ├── 2024-01-16.json
 ├── 2024-01-16.html
 └── ...
@@ -70,104 +95,158 @@ your-journal-folder/
 
 ### Data Storage
 
-- **Local Files**: Each journal entry creates two files - a JSON file for metadata and an HTML file for content
-- **No Cloud**: Nothing is sent to any server - everything stays on your device
+- **Local Files**: Each entry creates two files (JSON + HTML)
+- **No Cloud**: Nothing ever sent to any server
+- **Portable**: Sync your folder with Dropbox/Google Drive if desired
+- **Simple**: Plain text files you can always access
 
-## Usage
+## 💫 Usage
 
-### Writing an Entry
+### Creating an Entry
 
-1. From the dashboard, click "Write Today's Entry" or click any date on the calendar
-2. Enter a title for your entry
-3. Write your thoughts in the rich text editor
-4. Select your mood (Happy, Neutral, or Sad)
-5. Click "Save Entry"
+1. Click "Create Today's Entry" or any calendar date
+2. Write your title
+3. Compose your thoughts in the beautiful editor
+4. Select your mood
+5. Your entry auto-saves every 2.5 seconds
+6. Click "Done" when finished
 
-### Preview Mode
+### Reading Mode
 
-- Existing entries open in **Preview Mode** by default for comfortable reading
-- Click the "Edit" button in the top right to switch to edit mode
-- Click "Preview" to return to read-only view
-- Preview mode displays your entry in a clean, distraction-free format
+- Existing entries open in peaceful reading mode
+- Click "Edit" to make changes
+- Click "Preview" to return to reading
+- Book-like layout for comfortable reflection
 
-### Editing an Entry
+### Finding Entries
 
-1. Click on any existing entry from the calendar or recent entries list
-2. Make your changes
-3. Click "Save Entry"
+1. Use the search bar on the dashboard
+2. Search titles and full content
+3. Fuzzy search handles typos gracefully
+4. Click any result to open
 
 ### Deleting an Entry
 
-1. Open the entry you want to delete
-2. Click "Delete this entry" at the bottom
-3. Confirm the deletion
+1. Open the entry
+2. Switch to edit mode
+3. Click "Delete this entry"
+4. Confirm deletion
 
-### Searching Entries
-
-1. Use the search bar at the top of the dashboard
-2. Type to filter entries by title
-3. Search results appear below, showing up to 10 matches
-4. Click any result to open that entry
-
-### Statistics
+### Your Statistics
 
 The dashboard shows:
-- **Days Journaled**: Total number of entries
-- **Day Streak**: Consecutive days you've journaled
-- **Mood Counts**: Distribution of your moods (Happy, Neutral, Sad)
+- **Total Entries**: Days of journaling
+- **Current Streak**: Consecutive days
+- **Mood Patterns**: Emotional trends
+- **This Week**: Recent activity
 
-### Auto-Save
-
-- Entries automatically save every 2.5 seconds while you're editing
-- Status indicator in top right shows:
-  - "Saving..." - Currently saving
-  - "Saved just now" - Successfully saved
-  - "Saved X minutes ago" - Time since last save
-- Manual "Done" button saves and returns to dashboard
-- You'll be warned if you try to leave with unsaved changes
-
-## Tech Stack
+## 🛠️ Tech Stack
 
 - **Framework**: Next.js 15 with App Router
 - **UI**: React 19, TypeScript, Tailwind CSS 4
-- **Rich Text**: Tiptap with StarterKit
-- **Calendar**: react-calendar
-- **Dates**: date-fns
-- **Storage**: File System Access API (no database needed)
-- **Typography**: Inter for UI, Merriweather for content
+- **Editor**: Tiptap with rich formatting
+- **Calendar**: react-calendar with custom styling
+- **Search**: Fuse.js for fuzzy matching
+- **Dates**: date-fns for formatting
+- **Storage**: File System Access API
 
-## Design Features
+## 🎯 Design Features
 
-- **Glassmorphism**: Frosted glass effects on cards and panels
-- **Smooth Animations**: Fade-in, slide-in, and scale animations
-- **Gradient Accents**: Colorful gradients on stats and buttons
-- **Serif Typography**: Merriweather font for journal content for better readability
-- **Modern Calendar**: Enhanced styling with hover effects and mood indicators
-- **Responsive**: Works on desktop browsers
+- **Serene Palette**: Sage, sky, sand, and lavender
+- **Gentle Animations**: Floating, breathing effects
+- **Generous Spacing**: Ample whitespace for peace
+- **Soft Shadows**: Subtle depth without harshness
+- **Book Typography**: Serif fonts for reading comfort
+- **Responsive**: Works beautifully on all screens
 
-## Building for Production
-```bash
-npm run build
-npm start
-```
+## 📖 Journaling Tips
 
-## Notes
+### Make It a Practice
+- Write at the same time each day
+- Create a peaceful environment
+- Take three deep breaths before beginning
+- Let your thoughts flow without judgment
 
-- You need to select your journal folder each time you visit the app (browser security requirement)
-- If you select the same folder, your configuration and entries load automatically
-- Your journal folder can be anywhere on your computer
-- You can manually sync your journal folder with cloud storage services if desired
-- All formatting and content is preserved exactly as you write it
+### Prompts for Reflection
+- What am I grateful for today?
+- What did I learn?
+- How did I grow?
+- What brought me peace?
+- What challenged me?
 
-## Privacy & Security
+## 🔒 Privacy & Security
 
 - ✅ All data stored locally on your device
 - ✅ No analytics or tracking
 - ✅ No cloud synchronization
 - ✅ No data sent to any server
-- ✅ You have complete control over your journal files
-- ✅ Browser security requires folder re-selection each visit (this is intentional)
+- ✅ Complete control over your files
+- ✅ Browser security requires folder re-selection (intentional)
 
-## License
+## ⌨️ Keyboard Shortcuts
+
+- **Cmd/Ctrl + S**: Manual save (while editing)
+- **Cmd/Ctrl + K**: Return to dashboard
+- **Enter**: Submit on input fields
+
+## 💡 Tips
+
+- **Backup**: Your folder contains plain files - copy anywhere
+- **Sync**: Place folder in Dropbox/Google Drive for automatic backup
+- **Export**: Entries are JSON and HTML - readable anywhere
+- **Themes**: Light, serene colors promote peaceful reflection
+- **Search**: Fuzzy search finds entries even with typos
+- **Preview**: Read mode is perfect for reflection without editing
+
+## 🌟 The Repose Experience
+
+### For Morning Pages
+- Gentle colors don't strain tired eyes
+- Auto-save means no lost thoughts
+- Calendar shows your consistency
+- Reading mode for reviewing past mornings
+
+### For Evening Reflection
+- Peaceful interface promotes calm
+- Mood tracking reveals patterns
+- Search helps find related thoughts
+- Week view shows your journey
+
+### For Mindful Journaling
+- No distractions - just you and your thoughts
+- Beautiful typography invites deep writing
+- Privacy guaranteed - nothing shared
+- Serene design supports your practice
+
+## 🏗️ Building for Production
+
+```bash
+npm run build
+npm start
+```
+
+## 📝 Notes
+
+- Folder selection required each visit (browser security)
+- Same folder? Everything loads automatically
+- All formatting and content preserved exactly
+- Your journal folder can be anywhere on your computer
+- Manual sync with cloud services supported
+
+## 🌸 About Repose
+
+**Repose** (noun): A state of rest, peace, or calm reflection.
+
+This app was created with the belief that journaling should be:
+- **Private**: Your thoughts are yours alone
+- **Beautiful**: Design that invites reflection
+- **Simple**: No complexity, just writing
+- **Peaceful**: Every detail supports calm
+
+## 📄 License
 
 This project is open source and available under the MIT License.
+
+---
+
+**Repose** - Where your thoughts find peace. 🌿
