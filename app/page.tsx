@@ -19,14 +19,12 @@ export default function Home() {
   useEffect(() => {
     setIsMounted(true);
     
-    // Set time-based greeting
     const hour = new Date().getHours();
     if (hour < 12) setGreeting('Good morning');
     else if (hour < 18) setGreeting('Good afternoon');
     else setGreeting('Good evening');
   }, []);
 
-  // Simple redirect: if we have both handle and config, go to dashboard
   useEffect(() => {
     if (isMounted && folderHandle && userConfig) {
       router.push('/dashboard');
@@ -84,12 +82,12 @@ export default function Home() {
 
   if (!supported) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800">
-        <div className="max-w-md w-full glass rounded-3xl shadow-2xl p-8 text-center">
-          <div className="text-7xl mb-6">🚫</div>
-          <h1 className="text-2xl font-bold text-zinc-100 mb-3 tracking-tight">Browser Not Supported</h1>
-          <p className="text-zinc-400 leading-relaxed">
-            This app requires the File System Access API, which is only available in Chrome and Edge browsers.
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-serene">
+        <div className="max-w-md w-full serene-card rounded-3xl p-8 text-center animate-scale-in">
+          <div className="text-7xl mb-6 opacity-50">🌿</div>
+          <h1 className="text-2xl font-bold text-charcoal mb-3 tracking-tight">Browser Not Supported</h1>
+          <p className="text-warm-gray leading-relaxed">
+            Repose requires the File System Access API, which is available in Chrome and Edge browsers.
           </p>
         </div>
       </div>
@@ -97,91 +95,95 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-serene relative overflow-hidden">
+      {/* Subtle Background Pattern */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-sage rounded-full blur-3xl animate-gentle-float" style={{ animationDelay: '0s' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-sky rounded-full blur-3xl animate-gentle-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-lavender rounded-full blur-3xl animate-gentle-float" style={{ animationDelay: '4s' }} />
       </div>
 
       <div className="max-w-2xl w-full text-center relative z-10">
         {/* Hero Section */}
         <div className="mb-12">
-          {/* Animated Journal Icon */}
+          {/* Logo/Icon */}
           <div className="relative inline-block mb-8">
-            <div className="text-8xl animate-bounce" style={{ animationDuration: '3s' }}>📔</div>
-            <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full animate-ping" />
+            <div className="text-8xl animate-gentle-float" style={{ filter: 'drop-shadow(0 4px 12px rgba(168, 197, 163, 0.2))' }}>
+              🌿
+            </div>
           </div>
 
-          <h1 className="text-6xl md:text-7xl font-bold text-zinc-100 mb-4 tracking-tight bg-gradient-to-r from-zinc-100 via-zinc-300 to-zinc-100 bg-clip-text text-transparent animate-fade-in">
-            My Journal
+          <h1 className="text-7xl md:text-8xl font-bold text-charcoal mb-4 tracking-tight animate-fade-in" style={{ fontFamily: 'var(--font-display)' }}>
+            Repose
           </h1>
-          <p className="text-zinc-400 text-xl mb-2 animate-slide-in">
-            {greeting}! Ready to reflect?
+          <p className="text-sage text-xl mb-3 animate-slide-in font-medium">
+            {greeting}
           </p>
-          <p className="text-zinc-500 text-base animate-slide-in" style={{ animationDelay: '0.1s' }}>
-            Your personal space for thoughts and reflections
+          <p className="text-warm-gray text-lg animate-slide-in max-w-md mx-auto leading-relaxed" style={{ animationDelay: '0.1s' }}>
+            A serene space for your thoughts, where peace meets reflection
           </p>
         </div>
 
         {/* Main Card */}
-        <div className="glass rounded-3xl shadow-2xl p-10 backdrop-blur-xl animate-scale-in border-2 border-zinc-700/20">
+        <div className="serene-card rounded-3xl p-10 backdrop-blur-xl animate-scale-in" style={{ animationDelay: '0.2s' }}>
           {!folderHandle ? (
             <>
-              <h2 className="text-3xl font-bold text-zinc-100 mb-4 tracking-tight">Open Your Journal</h2>
-              <p className="text-zinc-400 mb-8 leading-relaxed text-lg">
-                Select your journal folder to get started. Your entries are stored locally and never leave your computer.
+              <h2 className="text-3xl font-semibold text-charcoal mb-4 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                Begin Your Journey
+              </h2>
+              <p className="text-warm-gray mb-8 leading-relaxed text-lg">
+                Select a peaceful place on your computer to store your reflections. Your thoughts remain private, always.
               </p>
 
               {/* Trust Indicators */}
               <div className="grid grid-cols-3 gap-4 mb-8">
-                <div className="text-center p-4 bg-zinc-800/30 rounded-xl">
-                  <div className="text-2xl mb-2">🔒</div>
-                  <div className="text-xs text-zinc-400 font-medium">Fully Private</div>
+                <div className="text-center p-5 bg-sage-light rounded-2xl border border-sage/10">
+                  <div className="text-3xl mb-2">🔒</div>
+                  <div className="text-xs text-charcoal font-medium">Private</div>
                 </div>
-                <div className="text-center p-4 bg-zinc-800/30 rounded-xl">
-                  <div className="text-2xl mb-2">💾</div>
-                  <div className="text-xs text-zinc-400 font-medium">Local Storage</div>
+                <div className="text-center p-5 bg-sky-light rounded-2xl border border-sky/10">
+                  <div className="text-3xl mb-2">💾</div>
+                  <div className="text-xs text-charcoal font-medium">Local</div>
                 </div>
-                <div className="text-center p-4 bg-zinc-800/30 rounded-xl">
-                  <div className="text-2xl mb-2">✨</div>
-                  <div className="text-xs text-zinc-400 font-medium">Auto-Saves</div>
+                <div className="text-center p-5 bg-lavender-light rounded-2xl border border-lavender/10">
+                  <div className="text-3xl mb-2">✨</div>
+                  <div className="text-xs text-charcoal font-medium">Serene</div>
                 </div>
               </div>
 
               <button
                 onClick={handleSelectFolder}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold py-5 px-6 rounded-2xl transition-all duration-200 flex items-center justify-center gap-3 shadow-xl shadow-blue-900/40 hover:shadow-2xl hover:shadow-blue-900/60 hover:-translate-y-1 text-lg"
+                className="w-full btn-primary text-white font-semibold py-5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                 </svg>
-                Select Journal Folder
+                Select Your Journal Folder
               </button>
 
               {/* How it Works */}
-              <div className="mt-10 pt-8 border-t border-zinc-700/30">
-                <h3 className="text-sm font-semibold text-zinc-300 mb-4 uppercase tracking-wider">How It Works</h3>
-                <div className="grid md:grid-cols-3 gap-4 text-left">
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-sm">1</div>
+              <div className="mt-10 pt-8 border-t border-sage/10">
+                <h3 className="text-sm font-semibold text-warm-gray mb-6 uppercase tracking-wider">Your Path to Repose</h3>
+                <div className="grid md:grid-cols-3 gap-6 text-left">
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-sage/15 border border-sage/20 flex items-center justify-center text-sage font-semibold text-sm">1</div>
                     <div>
-                      <div className="text-sm font-medium text-zinc-200 mb-1">Choose Folder</div>
-                      <div className="text-xs text-zinc-500">Select where to save your journal</div>
+                      <div className="text-sm font-medium text-charcoal mb-1">Choose Location</div>
+                      <div className="text-xs text-warm-gray leading-relaxed">Select a peaceful folder for your thoughts</div>
                     </div>
                   </div>
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold text-sm">2</div>
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-sky/15 border border-sky/20 flex items-center justify-center text-sky-dark font-semibold text-sm">2</div>
                     <div>
-                      <div className="text-sm font-medium text-zinc-200 mb-1">Start Writing</div>
-                      <div className="text-xs text-zinc-500">Create your first entry</div>
+                      <div className="text-sm font-medium text-charcoal mb-1">Begin Reflecting</div>
+                      <div className="text-xs text-warm-gray leading-relaxed">Start writing your first entry</div>
                     </div>
                   </div>
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-600/20 border border-green-500/30 flex items-center justify-center text-green-400 font-bold text-sm">3</div>
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-lavender/15 border border-lavender/20 flex items-center justify-center text-lavender-dark font-semibold text-sm">3</div>
                     <div>
-                      <div className="text-sm font-medium text-zinc-200 mb-1">Auto-Saved</div>
-                      <div className="text-xs text-zinc-500">All changes saved automatically</div>
+                      <div className="text-sm font-medium text-charcoal mb-1">Find Peace</div>
+                      <div className="text-xs text-warm-gray leading-relaxed">Your words, safely preserved</div>
                     </div>
                   </div>
                 </div>
@@ -189,9 +191,11 @@ export default function Home() {
             </>
           ) : (
             <>
-              <div className="text-6xl mb-6 animate-bounce" style={{ animationDuration: '2s' }}>👋</div>
-              <h2 className="text-3xl font-bold text-zinc-100 mb-3 tracking-tight">Welcome!</h2>
-              <p className="text-zinc-400 mb-8 leading-relaxed text-lg">What should we call you?</p>
+              <div className="text-6xl mb-6 animate-gentle-float">🌸</div>
+              <h2 className="text-3xl font-semibold text-charcoal mb-3 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                Welcome
+              </h2>
+              <p className="text-warm-gray mb-8 leading-relaxed text-lg">What shall we call you?</p>
               
               <div className="mb-8">
                 <input
@@ -206,12 +210,12 @@ export default function Home() {
                       handleStartJournaling();
                     }
                   }}
-                  placeholder="Enter your name"
-                  className="w-full bg-zinc-900/50 border-2 border-zinc-700/50 focus:border-blue-500/50 text-zinc-100 px-6 py-4 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all placeholder:text-zinc-500 text-lg"
+                  placeholder="Your name"
+                  className="w-full bg-soft-white border-2 border-sage/20 focus:border-sage text-charcoal px-6 py-4 rounded-xl transition-all placeholder:text-light-muted text-lg"
                   autoFocus
                 />
                 {error && (
-                  <p className="text-red-400 text-sm mt-3 flex items-center gap-2">
+                  <p className="text-red-500 text-sm mt-3 flex items-center gap-2 justify-center">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -223,18 +227,15 @@ export default function Home() {
               <button
                 onClick={handleStartJournaling}
                 disabled={isSaving || !name.trim()}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:cursor-not-allowed text-white font-semibold py-5 px-6 rounded-2xl transition-all duration-200 shadow-xl shadow-blue-900/40 hover:shadow-2xl hover:shadow-blue-900/60 hover:-translate-y-1 disabled:shadow-none disabled:hover:translate-y-0 text-lg"
+                className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-5 px-6 rounded-2xl transition-all duration-300 text-lg"
               >
                 {isSaving ? (
                   <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Creating your journal...
+                    <div className="w-5 h-5 spinner-serene rounded-full"></div>
+                    Creating your sanctuary...
                   </span>
                 ) : (
-                  'Start Journaling'
+                  'Begin Your Journey'
                 )}
               </button>
             </>
@@ -242,8 +243,23 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-zinc-500 text-sm">
-          <p>Your data stays private • Stored locally on your device • No cloud sync</p>
+        <div className="mt-8 text-center text-warm-gray text-sm animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <p className="flex items-center justify-center gap-2 flex-wrap">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-sage"></span>
+              Private & Secure
+            </span>
+            <span className="text-light-muted">•</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-sage"></span>
+              Stored Locally
+            </span>
+            <span className="text-light-muted">•</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-sage"></span>
+              Peaceful Experience
+            </span>
+          </p>
         </div>
       </div>
     </div>
