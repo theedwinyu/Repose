@@ -11,9 +11,14 @@ interface CalendarComponentProps {
   onActiveStartDateChange?: (date: Date) => void;
 }
 
-const moodEmojis = {
-  happy: '😊',
+const moodEmojis: Record<string, string> = {
+  peaceful: '😌',
+  content: '😊',
   neutral: '😐',
+  reflective: '😔',
+  heavy: '😢',
+  // Migration support for old moods
+  happy: '😊',
   sad: '😢',
 };
 

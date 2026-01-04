@@ -1,4 +1,4 @@
-# Repose - Your Serene Journaling Space
+# Repose
 
 A peaceful, private journaling app built with Next.js that stores your reflections locally on your computer using the File System Access API. No backend server or database needed - your thoughts stay safe and under your control.
 
@@ -182,12 +182,6 @@ The dashboard shows:
 - ✅ No data sent to any server
 - ✅ Complete control over your files
 - ✅ Browser security requires folder re-selection (intentional)
-
-## ⌨️ Keyboard Shortcuts
-
-- **Cmd/Ctrl + S**: Manual save (while editing)
-- **Cmd/Ctrl + K**: Return to dashboard
-- **Enter**: Submit on input fields
 
 ## 💡 Tips
 
