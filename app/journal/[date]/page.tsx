@@ -12,18 +12,54 @@ import { JournalEntry } from '../../types';
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-const writingPrompts = [
-  "What made you smile today?",
-  "What's something you learned recently?",
-  "Describe a moment of peace you experienced.",
-  "What are you looking forward to?",
-  "What challenge did you overcome today?",
-  "What are you grateful for right now?",
-  "How did you grow today?",
-  "What's on your mind?",
-  "What would you tell your past self?",
-  "What's a small win from today?",
-];
+// Mood-adaptive journaling prompts
+const promptsByMood = {
+  peaceful: [
+    "Describe this feeling of peace. Where do you feel it in your body? What does it remind you of?",
+    "What helped you find this calm today? How can you return to this feeling when you need it?",
+    "What are you noticing right now that usually goes unnoticed?",
+    "Describe a moment today using all five senses. What did you see, hear, smell, taste, feel?",
+    "What part of your day felt most aligned with who you want to be?",
+  ],
+  content: [
+    "What made today feel good? Be specific—was it a person, a moment, an accomplishment, or something else?",
+    "Write about a small moment today that made you smile or feel warm inside.",
+    "Who or what are you appreciating right now? Why does this matter to you?",
+    "What went better than expected today?",
+    "If you could bottle the feeling of today, what would you save it for?",
+  ],
+  neutral: [
+    "Sometimes 'okay' is enough. What made today just... a day?",
+    "What thoughts have been circling in your mind lately?",
+    "If today was a color or a texture, what would it be? Why?",
+    "What's something small you did today that you usually take for granted?",
+    "What are you wondering about right now—about yourself, your life, or the world?",
+  ],
+  reflective: [
+    "What's something you're trying to figure out right now? Write without needing to find the answer.",
+    "What emotions are beneath the surface today? Even if they're tangled or unclear, can you name them?",
+    "What would you say to a friend who was going through what you're going through?",
+    "Write a letter to your past self from one year ago. What would you want them to know?",
+    "What are you learning about yourself lately? It doesn't have to be profound—just honest.",
+  ],
+  heavy: [
+    "What do you need right now? Even if you can't have it, what would feel like relief?",
+    "Where in your body do you feel this heaviness? What would you say to that part of you?",
+    "List three very small things you did today, even if they feel insignificant. (Getting out of bed counts.)",
+    "What's one thing that feels too hard right now? You don't have to solve it, just name it.",
+    "If your pain could speak, what would it be trying to tell you?",
+  ],
+  lowEnergy: [
+    "How I feel right now:",
+    "Today I",
+    "My day in 3 emojis:",
+    "One thing I want to remember:",
+    "I'm here. That's enough for today.",
+    "Right now my body feels:",
+    "Something small I noticed:",
+    "Today I give myself permission to",
+  ],
+};
 
 export default function JournalEditor() {
   const router = useRouter();
@@ -43,7 +79,23 @@ export default function JournalEditor() {
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [randomPrompt] = useState(() => writingPrompts[Math.floor(Math.random() * writingPrompts.length)]);
+  
+  // Get mood-appropriate prompt
+  const [currentPrompt, setCurrentPrompt] = useState('');
+  const [showLowEnergyPrompts, setShowLowEnergyPrompts] = useState(false);
+  
+  const getRandomPrompt = (promptMood: 'peaceful' | 'content' | 'neutral' | 'reflective' | 'heavy' | 'lowEnergy') => {
+    const prompts = promptsByMood[promptMood];
+    return prompts[Math.floor(Math.random() * prompts.length)];
+  };
+  
+  // Update prompt when mood changes
+  useEffect(() => {
+    if (mood && !title && !body) {
+      const promptMood = showLowEnergyPrompts ? 'lowEnergy' : mood;
+      setCurrentPrompt(getRandomPrompt(promptMood));
+    }
+  }, [mood, showLowEnergyPrompts, title, body]);
 
   const [initialTitle, setInitialTitle] = useState('');
   const [initialBody, setInitialBody] = useState('');
@@ -464,14 +516,54 @@ export default function JournalEditor() {
             </div>
           </div>
 
-          {/* Writing Prompt */}
-          {!title && !body && (
+          {/* Mood Selector - AT TOP! */}
+          <div className="mb-8">
+            <MoodSelector selected={mood} onChange={setMood} />
+          </div>
+
+          {/* Writing Prompt - Shows after mood selection */}
+          {!title && !body && mood && (
             <div className="mb-8 serene-card rounded-2xl p-6 border border-sage/15 bg-gradient-to-r from-sage/5 to-sky/5">
               <div className="flex items-start gap-4">
                 <div className="text-3xl">💭</div>
                 <div className="flex-1">
-                  <div className="text-sm font-semibold text-sage-dark mb-1">Reflection Prompt</div>
-                  <p className="text-charcoal text-lg italic leading-relaxed">{randomPrompt}</p>
+                  <div className="text-sm font-semibold text-sage-dark mb-3">
+                    {showLowEnergyPrompts ? 'Micro prompt' : 'Something to consider'}
+                  </div>
+                  <p className="text-charcoal text-lg italic leading-relaxed mb-4">{currentPrompt}</p>
+                  
+                  {/* Prompt Controls */}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPrompt(getRandomPrompt(showLowEnergyPrompts ? 'lowEnergy' : mood))}
+                      className="text-xs text-sage-dark hover:text-sage font-medium transition-colors flex items-center gap-1"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Try another
+                    </button>
+                    {!showLowEnergyPrompts && (
+                      <button
+                        type="button"
+                        onClick={() => setShowLowEnergyPrompts(true)}
+                        className="text-xs text-warm-gray hover:text-charcoal font-medium transition-colors flex items-center gap-1"
+                      >
+                        <span>🪶</span>
+                        Need something simpler?
+                      </button>
+                    )}
+                    {showLowEnergyPrompts && (
+                      <button
+                        type="button"
+                        onClick={() => setShowLowEnergyPrompts(false)}
+                        className="text-xs text-warm-gray hover:text-charcoal font-medium transition-colors"
+                      >
+                        ← Back to full prompts
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -486,7 +578,7 @@ export default function JournalEditor() {
                 setTitle(e.target.value);
                 setError('');
               }}
-              placeholder="Title your reflection..."
+              placeholder="Give this a title..."
               className="w-full bg-transparent border-0 border-b-2 border-sage/20 focus:border-sage text-charcoal px-0 py-4 focus:outline-none transition-all text-3xl md:text-4xl font-bold placeholder:text-light-muted tracking-tight"
               style={{ fontFamily: 'var(--font-display)' }}
               autoFocus={!isExisting}
@@ -496,11 +588,6 @@ export default function JournalEditor() {
           {/* Rich Text Editor */}
           <div className="mb-6">
             <RichTextEditor content={body} onChange={setBody} />
-          </div>
-
-          {/* Mood Selector */}
-          <div className="mb-8">
-            <MoodSelector selected={mood} onChange={setMood} />
           </div>
 
           {/* Error Message */}
