@@ -33,7 +33,7 @@ export default function JournalEditor() {
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [mood, setMood] = useState<'happy' | 'sad' | 'neutral' | null>(null);
+  const [mood, setMood] = useState<'peaceful' | 'content' | 'neutral' | 'reflective' | 'heavy' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [error, setError] = useState('');
@@ -47,7 +47,7 @@ export default function JournalEditor() {
 
   const [initialTitle, setInitialTitle] = useState('');
   const [initialBody, setInitialBody] = useState('');
-  const [initialMood, setInitialMood] = useState<'happy' | 'sad' | 'neutral' | null>(null);
+  const [initialMood, setInitialMood] = useState<'peaceful' | 'content' | 'neutral' | 'reflective' | 'heavy' | null>(null);
 
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -245,15 +245,19 @@ export default function JournalEditor() {
   };
 
   const moodEmojis = {
-    happy: '😊',
+    peaceful: '😌',
+    content: '😊',
     neutral: '😐',
-    sad: '😢',
+    reflective: '😔',
+    heavy: '😢',
   };
 
   const moodColors = {
-    happy: 'from-sage/10 to-sage-light/5',
+    peaceful: 'from-sage/10 to-sage-light/5',
+    content: 'from-aqua/10 to-aqua-light/5',
     neutral: 'from-sand/10 to-sand-light/5',
-    sad: 'from-sky/10 to-sky-light/5',
+    reflective: 'from-lavender/10 to-lavender-light/5',
+    heavy: 'from-sky/10 to-sky-light/5',
   };
 
   if (isLoading) {
@@ -341,10 +345,8 @@ export default function JournalEditor() {
               </div>
 
               {/* Decorative Divider */}
-              <div className="flex items-center gap-4 mb-10">
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-sage/30 to-transparent" />
-                <div className="w-2 h-2 rounded-full bg-sage/40" />
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-sage/30 to-transparent" />
+              <div className="mb-10">
+                <div className="divider-wave" />
               </div>
 
               {/* Content */}
@@ -392,8 +394,8 @@ export default function JournalEditor() {
               <div className="flex items-center justify-between">
                 {/* Left: Date */}
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-sage/15 border border-sage/20 flex items-center justify-center">
-                    <span className="text-lg">🌿</span>
+                  <div className="w-10 h-10 rounded-full bg-sage/8 border border-sage/20 flex items-center justify-center overflow-hidden p-0.5">
+                    <img src="/repose-logo.jpg" alt="" className="w-full h-full rounded-full" />
                   </div>
                   <div>
                     <div className="text-xs text-warm-gray uppercase tracking-wider">
