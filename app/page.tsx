@@ -98,9 +98,9 @@ export default function Home() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-serene relative overflow-hidden">
       {/* Subtle Background Pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-sage rounded-full blur-3xl animate-gentle-float" style={{ animationDelay: '0s' }} />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-sky rounded-full blur-3xl animate-gentle-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-lavender rounded-full blur-3xl animate-gentle-float" style={{ animationDelay: '4s' }} />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-sage rounded-full blur-3xl wave-orb" style={{ animationDelay: '0s' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-sky rounded-full blur-3xl wave-orb" style={{ animationDelay: '4s' }} />
+        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-aqua rounded-full blur-3xl wave-orb" style={{ animationDelay: '8s' }} />
       </div>
 
       <div className="max-w-2xl w-full text-center relative z-10">
@@ -108,14 +108,19 @@ export default function Home() {
         <div className="mb-12">
           {/* Logo/Icon */}
           <div className="relative inline-block mb-8">
-            <div className="text-8xl animate-gentle-float" style={{ filter: 'drop-shadow(0 4px 12px rgba(168, 197, 163, 0.2))' }}>
-              🌿
+            <div className="w-32 h-32 animate-gentle-float" style={{ filter: 'drop-shadow(0 4px 12px rgba(127, 197, 184, 0.3))' }}>
+              <img src="/repose-logo.jpg" alt="Repose" className="w-full h-full rounded-full" />
             </div>
           </div>
 
           <h1 className="text-7xl md:text-8xl font-bold text-charcoal mb-4 tracking-tight animate-fade-in" style={{ fontFamily: 'var(--font-display)' }}>
             Repose
           </h1>
+          <div className="flex items-center justify-center gap-1 mb-4 text-sage text-2xl opacity-40">
+            <span>～</span>
+            <span>～</span>
+            <span>～</span>
+          </div>
           <p className="text-sage text-xl mb-3 animate-slide-in font-medium">
             {greeting}
           </p>
@@ -163,6 +168,7 @@ export default function Home() {
 
               {/* How it Works */}
               <div className="mt-10 pt-8 border-t border-sage/10">
+                <div className="divider-wave mb-6" />
                 <h3 className="text-sm font-semibold text-warm-gray mb-6 uppercase tracking-wider">Your Path to Repose</h3>
                 <div className="grid md:grid-cols-3 gap-6 text-left">
                   <div className="flex gap-4">
@@ -191,7 +197,9 @@ export default function Home() {
             </>
           ) : (
             <>
-              <div className="text-6xl mb-6 animate-gentle-float">🌸</div>
+              <div className="w-24 h-24 mb-6 mx-auto animate-gentle-float">
+                <img src="/repose-logo.jpg" alt="Repose" className="w-full h-full rounded-full" />
+              </div>
               <h2 className="text-3xl font-semibold text-charcoal mb-3 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
                 Welcome
               </h2>

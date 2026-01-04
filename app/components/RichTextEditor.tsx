@@ -182,7 +182,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
       </div>
 
       {/* Editor Content */}
-      <div className="p-6 bg-soft-white">
+      <div className="p-6 bg-cream">
         <EditorContent editor={editor} />
       </div>
     </div>

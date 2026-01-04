@@ -2,23 +2,32 @@
 @import 'tailwindcss';
 
 :root {
-  /* Serene Color Palette */
+  /* Serene Color Palette - Wave Inspired */
   --cream: #FAF9F6;
   --light-gray: #F5F3EF;
-  --soft-white: #FFFFFF;
+  --soft-white: #F8F6F3; /* Warmer off-white instead of pure white */
   
-  --sage: #A8C5A3;
-  --sage-light: #C8E0C4;
-  --sage-dark: #88A583;
+  /* Wave-inspired teal/aqua (primary) */
+  --sage: #7FC5B8;
+  --sage-light: #A8DDD3;
+  --sage-dark: #5EA89D;
   
-  --sand: #E8DCC4;
-  --sand-light: #F5EFE0;
-  --sand-dark: #D4C4A8;
+  /* Aqua accent from wave */
+  --aqua: #6BC9C9;
+  --aqua-light: #9BE0E0;
+  --aqua-dark: #4BA5A5;
   
+  /* Soft yellow-green from wave glow */
+  --sand: #D8E8C4;
+  --sand-light: #EEF5E0;
+  --sand-dark: #C4D4A8;
+  
+  /* Sky blue (keep similar) */
   --sky: #C5D8E8;
   --sky-light: #E0EAF5;
   --sky-dark: #A5B8C8;
   
+  /* Lavender (subtle shift to match wave) */
   --lavender: #D4C5E0;
   --lavender-light: #EAE0F0;
   --lavender-dark: #B4A5C0;
@@ -521,6 +530,139 @@ select:focus {
 .divider-serene {
   height: 1px;
   background: linear-gradient(to right, transparent, var(--sage-light), transparent);
+}
+
+/* Wavy divider - Option 2.5 */
+.divider-wave {
+  height: 20px;
+  width: 100%;
+  position: relative;
+  margin: 0 auto;
+}
+
+.divider-wave::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 10px,
+    var(--sage) 10px,
+    var(--sage) 11px,
+    transparent 11px,
+    transparent 20px
+  );
+  opacity: 0.3;
+}
+
+.divider-wave::after {
+  content: '～～～～～～～～～～～～～～～～～～～～';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--sage);
+  opacity: 0.4;
+  font-size: 16px;
+  letter-spacing: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+/* Flowing wave animation for backgrounds */
+@keyframes wave-float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  33% {
+    transform: translate(-10px, -10px) scale(1.05);
+    opacity: 0.4;
+  }
+  66% {
+    transform: translate(10px, 10px) scale(0.95);
+    opacity: 0.35;
+  }
+}
+
+.wave-orb {
+  animation: wave-float 12s ease-in-out infinite;
+}
+
+/* Ripple effect for buttons */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);
+  transform: scale(0);
+  opacity: 0;
+  transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+}
+
+.btn-primary:active::before {
+  transform: scale(2.5);
+  opacity: 0;
+  transition: none;
+  animation: ripple 0.6s ease-out;
+}
+
+/* Wave pattern for empty states */
+.wave-empty-state {
+  position: relative;
+  overflow: hidden;
+}
+
+.wave-empty-state::before {
+  content: '～ ～ ～ ～ ～ ～ ～ ～ ～ ～ ～ ～';
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: var(--sage);
+  opacity: 0.15;
+  font-size: 24px;
+  letter-spacing: 8px;
+  pointer-events: none;
+  animation: wave-float 8s ease-in-out infinite;
+}
+
+.wave-empty-state::after {
+  content: '～ ～ ～ ～ ～ ～ ～ ～ ～ ～ ～ ～';
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+  right: 0;
+  text-align: center;
+  color: var(--aqua);
+  opacity: 0.1;
+  font-size: 24px;
+  letter-spacing: 8px;
+  pointer-events: none;
+  animation: wave-float 8s ease-in-out infinite;
+  animation-delay: 2s;
 }
 
 /* Selection */

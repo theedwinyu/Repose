@@ -155,14 +155,24 @@ export default function Dashboard() {
 
   const streak = calculateStreak();
   
+  // Mood counts with migration support
   const moodCounts = {
-    happy: 0,
+    peaceful: 0,
+    content: 0,
     neutral: 0,
-    sad: 0,
+    reflective: 0,
+    heavy: 0,
   };
 
   entries.forEach((entry) => {
-    moodCounts[entry.mood]++;
+    // Handle migration from old 3-mood system
+    let mood = entry.mood;
+    if (mood === 'happy' as any) mood = 'content' as any;
+    if (mood === 'sad' as any) mood = 'heavy' as any;
+    
+    if (mood in moodCounts) {
+      moodCounts[mood as keyof typeof moodCounts]++;
+    }
   });
 
   const thisWeekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
@@ -199,9 +209,14 @@ export default function Dashboard() {
     setActiveStartDate(new Date());
   };
 
-  const moodEmojis = {
-    happy: '😊',
+  const moodEmojis: Record<string, string> = {
+    peaceful: '😌',
+    content: '😊',
     neutral: '😐',
+    reflective: '😔',
+    heavy: '😢',
+    // Migration support for old moods
+    happy: '😊',
     sad: '😢',
   };
 
@@ -336,36 +351,72 @@ export default function Dashboard() {
 
         {!searchQuery && (
           <>
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10 animate-scale-in" style={{ animationDelay: '0.2s' }}>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 gap-4 mb-8 animate-scale-in" style={{ animationDelay: '0.2s' }}>
               <div className="serene-card bg-gradient-to-br from-sage/8 to-sage-light/5 rounded-2xl p-6 text-center card-hover">
                 <div className="text-4xl mb-3">📔</div>
                 <div className="text-3xl font-bold text-sage-dark mb-1">{totalEntries}</div>
                 <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Total Entries</div>
               </div>
 
-              <div className="serene-card bg-gradient-to-br from-sand/15 to-sand-light/5 rounded-2xl p-6 text-center card-hover">
+              <div className="serene-card bg-gradient-to-br from-aqua/8 to-aqua-light/5 rounded-2xl p-6 text-center card-hover">
                 <div className="text-4xl mb-3">🔥</div>
-                <div className="text-3xl font-bold text-sand-dark mb-1">{streak}</div>
+                <div className="text-3xl font-bold text-aqua-dark mb-1">{streak}</div>
                 <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Day Streak</div>
               </div>
+            </div>
 
-              <div className="serene-card bg-gradient-to-br from-sage/12 to-sage-light/8 rounded-2xl p-6 text-center card-hover">
-                <div className="text-4xl mb-3">😊</div>
-                <div className="text-3xl font-bold text-sage-dark mb-1">{moodCounts.happy}</div>
-                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Happy Days</div>
+            {/* Emotional Landscape - Mood Bar Chart */}
+            <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.25s' }}>
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-charcoal tracking-tight mb-1" style={{ fontFamily: 'var(--font-display)' }}>
+                  Your Emotional Landscape
+                </h3>
+                <p className="text-sm text-warm-gray">
+                  {totalEntries} {totalEntries === 1 ? 'reflection' : 'reflections'} recorded
+                </p>
               </div>
+              
+              <div className="divider-wave mb-6" />
 
-              <div className="serene-card bg-gradient-to-br from-sand/12 to-sand-light/8 rounded-2xl p-6 text-center card-hover">
-                <div className="text-4xl mb-3">😐</div>
-                <div className="text-3xl font-bold text-sand-dark mb-1">{moodCounts.neutral}</div>
-                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Neutral Days</div>
-              </div>
-
-              <div className="serene-card bg-gradient-to-br from-sky/12 to-sky-light/8 rounded-2xl p-6 text-center card-hover">
-                <div className="text-4xl mb-3">😢</div>
-                <div className="text-3xl font-bold text-sky-dark mb-1">{moodCounts.sad}</div>
-                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Sad Days</div>
+              <div className="space-y-4">
+                {[
+                  { mood: 'peaceful', emoji: '😌', label: 'Peaceful', color: 'sage', count: moodCounts.peaceful },
+                  { mood: 'content', emoji: '😊', label: 'Content', color: 'aqua', count: moodCounts.content },
+                  { mood: 'neutral', emoji: '😐', label: 'Neutral', color: 'sand', count: moodCounts.neutral },
+                  { mood: 'reflective', emoji: '😔', label: 'Reflective', color: 'lavender', count: moodCounts.reflective },
+                  { mood: 'heavy', emoji: '😢', label: 'Heavy', color: 'sky', count: moodCounts.heavy },
+                ].map(({ mood, emoji, label, color, count }) => {
+                  const percentage = totalEntries > 0 ? (count / totalEntries) * 100 : 0;
+                  const barWidth = count > 0 ? Math.max(percentage, 5) : 0; // Minimum 5% if count > 0
+                  
+                  return (
+                    <div key={mood} className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 w-32 flex-shrink-0">
+                        <span className="text-2xl">{emoji}</span>
+                        <span className="text-sm font-medium text-charcoal">{label}</span>
+                      </div>
+                      <div className="flex-1 flex items-center gap-3">
+                        <div className="flex-1 h-8 bg-light-gray rounded-full overflow-hidden relative">
+                          {count > 0 && (
+                            <div 
+                              className="h-full rounded-full transition-all duration-500 absolute top-0 left-0"
+                              style={{ 
+                                width: `${barWidth}%`,
+                                background: color === 'sage' ? 'linear-gradient(to right, #7FC5B8, #A8DDD3)' :
+                                           color === 'aqua' ? 'linear-gradient(to right, #6BC9C9, #9BE0E0)' :
+                                           color === 'sand' ? 'linear-gradient(to right, #D8E8C4, #EEF5E0)' :
+                                           color === 'lavender' ? 'linear-gradient(to right, #D4C5E0, #EAE0F0)' :
+                                           'linear-gradient(to right, #C5D8E8, #E0EAF5)'
+                              }}
+                            />
+                          )}
+                        </div>
+                        <span className="text-lg font-semibold text-charcoal w-12 text-right">{count}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -411,12 +462,13 @@ export default function Dashboard() {
 
         {/* Recent/Search Results */}
         <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.5s' }}>
+          <div className="divider-wave mb-6" />
           <h3 className="text-2xl font-bold text-charcoal mb-6 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
             {searchQuery ? 'Search Results' : 'Recent Reflections'}
           </h3>
           
           {recentEntries.length === 0 ? (
-            <div className="text-center py-20">
+            <div className="text-center py-20 wave-empty-state">
               <div className="text-7xl mb-6 animate-gentle-float">
                 {searchQuery ? '🔍' : '🌸'}
               </div>
@@ -488,18 +540,6 @@ export default function Dashboard() {
           </span>
         </div>
       </main>
-
-      {/* Floating Action Button */}
-      <button
-        onClick={handleWriteToday}
-        className="fixed bottom-8 right-8 w-16 h-16 btn-primary text-white rounded-full shadow-serene-lg hover:shadow-serene-lg hover:scale-110 flex items-center justify-center transition-all duration-300 z-50 animate-scale-in"
-        style={{ animationDelay: '0.6s' }}
-        title="Write new entry"
-      >
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-        </svg>
-      </button>
     </div>
   );
 }
