@@ -466,7 +466,7 @@ export default function JournalEditor() {
 
           {/* Writing Prompt */}
           {!title && !body && (
-            <div className="mb-8 serene-card rounded-2xl p-6 border border-sage/15 bg-gradient-to-r from-sage/5 to-sky/5 wave-empty-state">
+            <div className="mb-8 serene-card rounded-2xl p-6 border border-sage/15 bg-gradient-to-r from-sage/5 to-sky/5">
               <div className="flex items-start gap-4">
                 <div className="text-3xl">💭</div>
                 <div className="flex-1">
