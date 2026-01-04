@@ -175,6 +175,22 @@ export default function Dashboard() {
     }
   });
 
+  // Calculate total words written across all entries
+  const calculateTotalWords = () => {
+    let totalWords = 0;
+    searchableEntries.forEach((entry) => {
+      if (entry.content) {
+        // Remove HTML tags and count words
+        const text = entry.content.replace(/<[^>]*>/g, ' ');
+        const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+        totalWords += words.length;
+      }
+    });
+    return totalWords;
+  };
+
+  const totalWords = calculateTotalWords();
+
   const thisWeekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
   const thisWeekEnd = endOfWeek(new Date(), { weekStartsOn: 0 });
   const thisWeekEntries = Array.from(entries.keys()).filter(dateStr => {
@@ -356,13 +372,13 @@ export default function Dashboard() {
               <div className="serene-card bg-gradient-to-br from-sage/8 to-sage-light/5 rounded-2xl p-6 text-center card-hover">
                 <div className="text-4xl mb-3">📔</div>
                 <div className="text-3xl font-bold text-sage-dark mb-1">{totalEntries}</div>
-                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Total Entries</div>
+                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Total Reflections</div>
               </div>
 
               <div className="serene-card bg-gradient-to-br from-aqua/8 to-aqua-light/5 rounded-2xl p-6 text-center card-hover">
-                <div className="text-4xl mb-3">🔥</div>
-                <div className="text-3xl font-bold text-aqua-dark mb-1">{streak}</div>
-                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Day Streak</div>
+                <div className="text-4xl mb-3">✍️</div>
+                <div className="text-3xl font-bold text-aqua-dark mb-1">{totalWords.toLocaleString()}</div>
+                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Words Written</div>
               </div>
             </div>
 
@@ -536,7 +552,7 @@ export default function Dashboard() {
           </button>
           <span className="text-light-muted">•</span>
           <span className="text-warm-gray">
-            {totalEntries} {totalEntries === 1 ? 'entry' : 'entries'} • {streak} day streak
+            {totalEntries} {totalEntries === 1 ? 'reflection' : 'reflections'} • {totalWords.toLocaleString()} words
           </span>
         </div>
       </main>
