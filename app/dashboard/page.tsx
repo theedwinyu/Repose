@@ -8,6 +8,7 @@ import { useFolderContext } from '../context/FolderContext';
 import { readEntry } from '../lib/fileSystem';
 import Header from '../components/Header';
 import CalendarComponent from '../components/Calendar';
+import type { Mood } from "../types";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function Dashboard() {
   const [searchableEntries, setSearchableEntries] = useState<Array<{
     dateStr: string;
     title: string;
-    mood: 'happy' | 'neutral' | 'sad';
+    mood: Mood,
     timestamp: string;
     content: string;
   }>>([]);
