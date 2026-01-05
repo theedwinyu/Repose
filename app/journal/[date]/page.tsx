@@ -84,6 +84,7 @@ export default function JournalEditor() {
   // Get mood-appropriate prompt
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [showLowEnergyPrompts, setShowLowEnergyPrompts] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(true); // Control prompt visibility
   
   const getRandomPrompt = (promptMood: 'peaceful' | 'content' | 'neutral' | 'reflective' | 'heavy' | 'lowEnergy') => {
     const prompts = promptsByMood[promptMood];
@@ -92,16 +93,17 @@ export default function JournalEditor() {
   
   // Update prompt when mood changes
   useEffect(() => {
-    if (mood && !title && !body) {
+    if (mood) {
       const promptMood = showLowEnergyPrompts ? 'lowEnergy' : mood;
       // Defer setState to avoid cascading renders
       const timeoutId = setTimeout(() => {
         setCurrentPrompt(getRandomPrompt(promptMood));
+        setShowPrompt(true); // Show prompt when mood changes
       }, 0);
       
       return () => clearTimeout(timeoutId);
     }
-  }, [mood, showLowEnergyPrompts, title, body]);
+  }, [mood, showLowEnergyPrompts]);
 
   const [initialTitle, setInitialTitle] = useState('');
   const [initialBody, setInitialBody] = useState('');
@@ -533,9 +535,21 @@ export default function JournalEditor() {
           </div>
 
           {/* Writing Prompt - Shows after mood selection */}
-          {!title && !body && mood && (
-            <div className="mb-8 serene-card rounded-2xl p-6 border border-sage/15 bg-gradient-to-r from-sage/5 to-sky/5">
-              <div className="flex items-start gap-4">
+          {mood && showPrompt && currentPrompt && (
+            <div className="mb-8 serene-card rounded-2xl p-6 border border-sage/15 bg-gradient-to-r from-sage/5 to-sky/5 relative">
+              {/* Dismiss button */}
+              <button
+                type="button"
+                onClick={() => setShowPrompt(false)}
+                className="absolute top-4 right-4 text-warm-gray hover:text-charcoal transition-colors"
+                aria-label="Dismiss prompt"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="flex items-start gap-4 pr-8">
                 <div className="text-3xl">💭</div>
                 <div className="flex-1">
                   <div className="text-sm font-semibold text-sage-dark mb-3">
@@ -547,7 +561,10 @@ export default function JournalEditor() {
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => setCurrentPrompt(getRandomPrompt(showLowEnergyPrompts ? 'lowEnergy' : mood))}
+                      onClick={() => {
+                        const promptMood = showLowEnergyPrompts ? 'lowEnergy' : mood;
+                        setCurrentPrompt(getRandomPrompt(promptMood));
+                      }}
                       className="text-xs text-sage-dark hover:text-sage font-medium transition-colors flex items-center gap-1"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
