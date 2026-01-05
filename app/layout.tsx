@@ -3,8 +3,8 @@ import './globals.css';
 import { FolderProvider } from './context/FolderContext';
 
 export const metadata: Metadata = {
-  title: 'Repose - Your Serene Journaling Space',
-  description: 'A peaceful, private journaling app that keeps your thoughts safe on your device.',
+  title: "Repose",
+  description: "A serene, local-first journaling space.",
 };
 
 export default function RootLayout({
