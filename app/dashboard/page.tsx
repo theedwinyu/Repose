@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { format, differenceInDays, parse, startOfWeek, endOfWeek, subDays } from 'date-fns';
+import { format, parse, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import Fuse from 'fuse.js';
 import { useFolderContext } from '../context/FolderContext';
 import { readEntry } from '../lib/fileSystem';
@@ -59,12 +59,16 @@ export default function Dashboard() {
   }, [searchQuery, entries, fuse]);
 
   useEffect(() => {
-    setIsMounted(true);
+    const timeoutId = setTimeout(() => {
+      setIsMounted(true);
+      
+      const hour = new Date().getHours();
+      if (hour < 12) setGreeting('Good morning');
+      else if (hour < 18) setGreeting('Good afternoon');
+      else setGreeting('Good evening');
+    }, 0);
     
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting('Good morning');
-    else if (hour < 18) setGreeting('Good afternoon');
-    else setGreeting('Good evening');
+    return () => clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {
@@ -118,44 +122,7 @@ export default function Dashboard() {
   }
 
   const totalEntries = entries.size;
-  
-  const calculateStreak = () => {
-    if (entries.size === 0) return 0;
 
-    const dates = Array.from(entries.keys())
-      .map(dateStr => parse(dateStr, 'yyyy-MM-dd', new Date()))
-      .sort((a, b) => b.getTime() - a.getTime());
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const mostRecent = dates[0];
-    mostRecent.setHours(0, 0, 0, 0);
-
-    const daysDiff = differenceInDays(today, mostRecent);
-
-    if (daysDiff > 1) return 0;
-
-    let streak = 1;
-    for (let i = 1; i < dates.length; i++) {
-      const current = new Date(dates[i]);
-      current.setHours(0, 0, 0, 0);
-      const previous = new Date(dates[i - 1]);
-      previous.setHours(0, 0, 0, 0);
-      
-      const diff = differenceInDays(previous, current);
-      if (diff === 1) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-
-    return streak;
-  };
-
-  const streak = calculateStreak();
-  
   // Mood counts with migration support
   const moodCounts = {
     peaceful: 0,
@@ -166,10 +133,7 @@ export default function Dashboard() {
   };
 
   entries.forEach((entry) => {
-    // Handle migration from old 3-mood system
-    let mood = entry.mood;
-    if (mood === 'happy' as any) mood = 'content' as any;
-    if (mood === 'sad' as any) mood = 'heavy' as any;
+    const mood = entry.mood;
     
     if (mood in moodCounts) {
       moodCounts[mood as keyof typeof moodCounts]++;
@@ -232,9 +196,6 @@ export default function Dashboard() {
     neutral: '😐',
     reflective: '😔',
     heavy: '😢',
-    // Migration support for old moods
-    happy: '😊',
-    sad: '😢',
   };
 
   const getLast7Days = () => {
@@ -471,7 +432,7 @@ export default function Dashboard() {
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                 </svg>
-                <span className="text-lg">Create Today's Entry</span>
+                <span className="text-lg">Create Today&apos;s Entry</span>
               </button>
             )}
           </>

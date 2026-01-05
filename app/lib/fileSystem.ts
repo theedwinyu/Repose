@@ -22,7 +22,7 @@ export async function readConfig(handle: FileSystemDirectoryHandle): Promise<Use
     const file = await fileHandle.getFile();
     const text = await file.text();
     return JSON.parse(text) as UserConfig;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -54,7 +54,7 @@ export async function readEntry(
       ...metadata,
       body,
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }

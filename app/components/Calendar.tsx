@@ -17,9 +17,6 @@ const moodEmojis: Record<string, string> = {
   neutral: '😐',
   reflective: '😔',
   heavy: '😢',
-  // Migration support for old moods
-  happy: '😊',
-  sad: '😢',
 };
 
 export default function CalendarComponent({
@@ -28,14 +25,23 @@ export default function CalendarComponent({
   activeStartDate,
   onActiveStartDateChange,
 }: CalendarComponentProps) {
-  const [Calendar, setCalendar] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [Calendar, setCalendar] = useState<React.ComponentType<any> | null>(null);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
+    let mounted = true;
+    
     import('react-calendar').then((mod) => {
-      setCalendar(() => mod.default);
+      if (mounted) {
+        setCalendar(() => mod.default);
+        setIsClient(true);
+      }
     });
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const tileContent = ({ date }: { date: Date }) => {

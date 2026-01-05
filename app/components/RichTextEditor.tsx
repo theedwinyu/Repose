@@ -9,11 +9,39 @@ interface RichTextEditorProps {
   onChange: (html: string) => void;
 }
 
+// Move ToolbarButton outside component to fix React hooks rules
+const ToolbarButton = ({
+  onClick,
+  isActive,
+  children,
+}: {
+  onClick: () => void;
+  isActive: boolean;
+  children: React.ReactNode;
+}) => (
+  <button
+    onClick={onClick}
+    type="button"
+    className={`p-2.5 rounded-lg transition-all duration-200 ${
+      isActive 
+        ? 'bg-sage/15 text-charcoal' 
+        : 'text-warm-gray hover:bg-sage/8 hover:text-charcoal'
+    }`}
+  >
+    {children}
+  </button>
+);
+
 export default function RichTextEditor({ content, onChange }: RichTextEditorProps) {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
+    // Use requestAnimationFrame to defer setState
+    const timeoutId = setTimeout(() => {
+      setIsClient(true);
+    }, 0);
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const editor = useEditor({
@@ -56,28 +84,6 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
     );
   }
 
-  const ToolbarButton = ({
-    onClick,
-    isActive,
-    children,
-  }: {
-    onClick: () => void;
-    isActive: boolean;
-    children: React.ReactNode;
-  }) => (
-    <button
-      onClick={onClick}
-      type="button"
-      className={`p-2.5 rounded-lg transition-all duration-200 ${
-        isActive 
-          ? 'bg-sage/15 text-charcoal' 
-          : 'text-warm-gray hover:bg-sage/8 hover:text-charcoal'
-      }`}
-    >
-      {children}
-    </button>
-  );
-
   return (
     <div className="serene-card rounded-xl overflow-hidden">
       {/* Toolbar */}
@@ -87,8 +93,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           isActive={editor.isActive('bold')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" />
           </svg>
         </ToolbarButton>
 
@@ -97,9 +102,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           isActive={editor.isActive('italic')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <line x1="19" y1="4" x2="10" y2="4" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            <line x1="14" y1="20" x2="5" y2="20" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            <line x1="15" y1="4" x2="9" y2="20" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 4h4M10 20h4M14 4l-4 16" />
           </svg>
         </ToolbarButton>
 
@@ -108,7 +111,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           isActive={editor.isActive('strike')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18M8 5h8M9 19h6" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18M9 5h6M9 19h6" />
           </svg>
         </ToolbarButton>
 
@@ -128,12 +131,10 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           isActive={editor.isActive('bulletList')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <line x1="8" y1="6" x2="21" y2="6" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            <line x1="8" y1="12" x2="21" y2="12" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            <line x1="8" y1="18" x2="21" y2="18" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            <circle cx="4" cy="6" r="1" fill="currentColor" />
-            <circle cx="4" cy="12" r="1" fill="currentColor" />
-            <circle cx="4" cy="18" r="1" fill="currentColor" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <circle cx="7" cy="6" r="1.5" fill="currentColor" />
+            <circle cx="7" cy="12" r="1.5" fill="currentColor" />
+            <circle cx="7" cy="18" r="1.5" fill="currentColor" />
           </svg>
         </ToolbarButton>
 
@@ -142,12 +143,10 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           isActive={editor.isActive('orderedList')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <line x1="10" y1="6" x2="21" y2="6" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            <line x1="10" y1="12" x2="21" y2="12" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            <line x1="10" y1="18" x2="21" y2="18" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            <path d="M4 6h1v4" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            <path d="M4 10h2" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <text x="5" y="8" fontSize="8" fill="currentColor">1</text>
+            <text x="5" y="14" fontSize="8" fill="currentColor">2</text>
+            <text x="5" y="20" fontSize="8" fill="currentColor">3</text>
           </svg>
         </ToolbarButton>
 
@@ -156,7 +155,8 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           isActive={editor.isActive('blockquote')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h8M8 13h6m-10 8h16a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8h18M3 12h18M3 16h18" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M3 8v8" />
           </svg>
         </ToolbarButton>
 

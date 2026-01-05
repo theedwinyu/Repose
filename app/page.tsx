@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFolderContext } from './context/FolderContext';
 import { isFileSystemAccessSupported, openJournalFolder, writeConfig, listEntries, readConfig } from './lib/fileSystem';
+import Image from 'next/image';
 
 export default function Home() {
   const router = useRouter();
@@ -109,7 +110,7 @@ export default function Home() {
           {/* Logo/Icon */}
           <div className="relative inline-block mb-8">
             <div className="w-32 h-32 animate-gentle-float" style={{ filter: 'drop-shadow(0 4px 12px rgba(127, 197, 184, 0.3))' }}>
-              <img src="/repose-logo.jpg" alt="Repose" className="w-full h-full rounded-full" />
+              <Image src="/repose-logo.jpg" alt="Repose" width={128} height={128} className="w-full h-full rounded-full" />
             </div>
           </div>
 
@@ -198,7 +199,7 @@ export default function Home() {
           ) : (
             <>
               <div className="w-24 h-24 mb-6 mx-auto animate-gentle-float">
-                <img src="/repose-logo.jpg" alt="Repose" className="w-full h-full rounded-full" />
+                <Image src="/repose-logo.jpg" alt="Repose" width={128} height={128} className="w-full h-full rounded-full" />
               </div>
               <h2 className="text-3xl font-semibold text-charcoal mb-3 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
                 Welcome

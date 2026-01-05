@@ -9,6 +9,7 @@ import Header from '../../components/Header';
 import RichTextEditor from '../../components/RichTextEditor';
 import MoodSelector from '../../components/MoodSelector';
 import { JournalEntry } from '../../types';
+import Image from 'next/image';
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -93,7 +94,12 @@ export default function JournalEditor() {
   useEffect(() => {
     if (mood && !title && !body) {
       const promptMood = showLowEnergyPrompts ? 'lowEnergy' : mood;
-      setCurrentPrompt(getRandomPrompt(promptMood));
+      // Defer setState to avoid cascading renders
+      const timeoutId = setTimeout(() => {
+        setCurrentPrompt(getRandomPrompt(promptMood));
+      }, 0);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [mood, showLowEnergyPrompts, title, body]);
 
@@ -219,16 +225,14 @@ export default function JournalEditor() {
   }
 
   const date = parse(dateStr, 'yyyy-MM-dd', new Date());
-  const formattedDate = format(date, 'EEEE, MMMM d, yyyy');
   const formattedShortDate = format(date, 'MMM d, yyyy');
 
   const tempDiv = typeof document !== 'undefined' ? document.createElement('div') : null;
+  let wordCount = 0;
   if (tempDiv) {
     tempDiv.innerHTML = body;
     const text = tempDiv.textContent || tempDiv.innerText || '';
-    var wordCount = text.trim().split(/\s+/).filter(word => word.length > 0).length;
-  } else {
-    var wordCount = 0;
+    wordCount = text.trim().split(/\s+/).filter(word => word.length > 0).length;
   }
 
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
@@ -454,7 +458,7 @@ export default function JournalEditor() {
                 {/* Left: Date */}
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-sage/8 border border-sage/20 flex items-center justify-center overflow-hidden p-0.5">
-                    <img src="/repose-logo.jpg" alt="" className="w-full h-full rounded-full" />
+                    <Image src="/repose-logo.jpg" alt="" width={40} height={40} className="w-full h-full rounded-full" />
                   </div>
                   <div>
                     <div className="text-xs text-warm-gray uppercase tracking-wider">
