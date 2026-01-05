@@ -111,6 +111,13 @@ export default function JournalEditor() {
 
     async function loadEntry() {
       setIsLoading(true);
+
+      if (!folderHandle) {
+        setError("No journal folder selected. Please go back and select your folder.");
+        setIsLoading(false);
+        return;
+      }
+
       const entry = await readEntry(folderHandle, dateStr);
       
       if (entry) {

@@ -10,3 +10,7 @@ export interface JournalEntry {
 export interface UserConfig {
   name: string;
 }
+
+export interface JournalEntryWithBody extends JournalEntry {
+  body: string;
+}
