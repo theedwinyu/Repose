@@ -211,13 +211,6 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-serene">
         <div className="max-w-2xl w-full serene-card rounded-3xl p-8 md:p-12 animate-scale-in">
-          {/* Progress Indicator */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-8 h-8 rounded-full bg-sage text-white flex items-center justify-center text-sm font-semibold">1</div>
-            <div className="w-16 h-0.5 bg-sage/20" />
-            <div className="w-8 h-8 rounded-full bg-sage/20 text-warm-gray flex items-center justify-center text-sm font-semibold">2</div>
-          </div>
-
           <h2 className="text-3xl font-bold text-charcoal mb-8 text-center tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
             How Repose Protects Your Privacy
           </h2>
@@ -279,15 +272,6 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-serene">
         <div className="max-w-2xl w-full serene-card rounded-3xl p-8 md:p-12 animate-scale-in">
-          {/* Progress Indicator */}
-          {!isReturningUser && (
-            <div className="flex items-center justify-center gap-2 mb-8">
-              <div className="w-8 h-8 rounded-full bg-sage text-white flex items-center justify-center text-sm font-semibold">✓</div>
-              <div className="w-16 h-0.5 bg-sage" />
-              <div className="w-8 h-8 rounded-full bg-sage text-white flex items-center justify-center text-sm font-semibold">2</div>
-            </div>
-          )}
-
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-charcoal mb-3 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
               {isReturningUser ? 'Welcome Back' : 'Select Your Journal Folder'}
@@ -354,13 +338,6 @@ export default function Home() {
               </p>
             </div>
           )}
-
-          {/* Progress Indicator */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-8 h-8 rounded-full bg-sage text-white flex items-center justify-center text-sm font-semibold">✓</div>
-            <div className="w-16 h-0.5 bg-sage" />
-            <div className="w-8 h-8 rounded-full bg-sage text-white flex items-center justify-center text-sm font-semibold">2</div>
-          </div>
 
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-charcoal mb-3 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
