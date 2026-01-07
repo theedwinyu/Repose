@@ -3,12 +3,30 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, parse, startOfWeek, endOfWeek, subDays } from 'date-fns';
-import Fuse from 'fuse.js';
+import dynamic from 'next/dynamic';
 import { useFolderContext } from '../context/FolderContext';
 import { readEntry } from '../lib/fileSystem';
 import Header from '../components/Header';
-import CalendarComponent from '../components/Calendar';
 import type { Mood } from "../types";
+
+// PERFORMANCE: Dynamic import Calendar to reduce initial bundle
+const CalendarComponent = dynamic(() => import('../components/Calendar'), {
+  loading: () => (
+    <div className="serene-card rounded-2xl p-8 h-96 flex items-center justify-center">
+      <div className="w-8 h-8 spinner-serene rounded-full"></div>
+    </div>
+  ),
+  ssr: false
+});
+
+// PERFORMANCE: Dynamic import Fuse.js
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let Fuse: any = null;
+if (typeof window !== 'undefined') {
+  import('fuse.js').then(mod => {
+    Fuse = mod.default;
+  });
+}
 
 export default function Dashboard() {
   const router = useRouter();
@@ -16,6 +34,7 @@ export default function Dashboard() {
   const [activeStartDate, setActiveStartDate] = useState<Date>(new Date());
   const [isMounted, setIsMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(''); // PERFORMANCE: Debounced search
   const [greeting, setGreeting] = useState('');
 
   const [searchableEntries, setSearchableEntries] = useState<Array<{
@@ -26,8 +45,19 @@ export default function Dashboard() {
     content: string;
   }>>([]);
 
-  // Move fuse.js setup before early returns
+  // PERFORMANCE: Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // PERFORMANCE: Memoized fuse instance (only recreates when searchableEntries changes)
   const fuse = useMemo(() => {
+    if (!Fuse || searchableEntries.length === 0) return null;
+    
     return new Fuse(searchableEntries, {
       keys: [
         { name: 'title', weight: 2 },
@@ -44,19 +74,28 @@ export default function Dashboard() {
   const filteredEntries = useMemo(() => {
     if (!entries) return [];
     
-    if (!searchQuery.trim()) {
+    // PERFORMANCE: Use debounced search query
+    if (!debouncedSearchQuery.trim()) {
       return Array.from(entries.entries())
         .sort((a, b) => b[1].timestamp.localeCompare(a[1].timestamp));
     }
 
-    const results = fuse.search(searchQuery);
+    // PERFORMANCE: Check if fuse is loaded
+    if (!fuse) {
+      return Array.from(entries.entries())
+        .sort((a, b) => b[1].timestamp.localeCompare(a[1].timestamp));
+    }
+
+    const results = fuse.search(debouncedSearchQuery);
     
-    return results.map(result => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return results.map((result: any) => {
       const dateStr = result.item.dateStr;
       const entry = entries.get(dateStr);
       return [dateStr, entry] as [string, typeof entry];
-    }).filter((item): item is [string, NonNullable<typeof item[1]>] => item[1] !== undefined);
-  }, [searchQuery, entries, fuse]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }).filter((item: any): item is [string, NonNullable<typeof item[1]>] => item[1] !== undefined);
+  }, [debouncedSearchQuery, entries, fuse]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -284,6 +323,20 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
+
+          {/* Create Today's Entry Button - Primary CTA */}
+          {!hasEntryToday && (
+            <button
+              onClick={handleWriteToday}
+              className="w-full btn-primary text-white font-semibold py-6 px-6 rounded-2xl transition-all duration-300 mb-6 flex items-center justify-center gap-3 animate-scale-in shadow-lg hover:shadow-xl" 
+              style={{ animationDelay: '0.15s' }}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="text-lg">Create Today&apos;s Entry</span>
+            </button>
+          )}
         </div>
 
         {/* Search Bar */}
@@ -422,19 +475,6 @@ export default function Dashboard() {
                 onActiveStartDateChange={setActiveStartDate}
               />
             </div>
-
-            {!hasEntryToday && (
-              <button
-                onClick={handleWriteToday}
-                className="w-full btn-primary text-white font-semibold py-6 px-6 rounded-2xl transition-all duration-300 mb-8 flex items-center justify-center gap-3 animate-scale-in" 
-                style={{ animationDelay: '0.4s' }}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="text-lg">Create Today&apos;s Entry</span>
-              </button>
-            )}
           </>
         )}
 
@@ -470,7 +510,8 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {recentEntries.map(([dateStr, entry]) => {
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {recentEntries.map(([dateStr, entry]: [string, any]) => {
                 const preview = searchQuery ? getSearchPreview(dateStr) : '';
                 return (
                   <button
