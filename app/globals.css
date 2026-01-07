@@ -710,3 +710,36 @@ select:focus {
 .breathe {
   animation: breathe 4s ease-in-out infinite;
 }
+
+/* ========================================
+   PERFORMANCE OPTIMIZATIONS
+   ======================================== */
+
+/* Reduced Motion Support - Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  /* Disable floating animations for accessibility */
+  .animate-wave-float,
+  .animate-gentle-float,
+  .animate-gentle-pulse {
+    animation: none !important;
+  }
+}
+
+/* GPU Acceleration for smooth animations */
+.animate-fade-in,
+.animate-slide-in,
+.animate-scale-in,
+.animate-gentle-float,
+.animate-wave-float {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
