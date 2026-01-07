@@ -323,6 +323,20 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
+
+          {/* Create Today's Entry Button - Primary CTA */}
+          {!hasEntryToday && (
+            <button
+              onClick={handleWriteToday}
+              className="w-full btn-primary text-white font-semibold py-6 px-6 rounded-2xl transition-all duration-300 mb-6 flex items-center justify-center gap-3 animate-scale-in shadow-lg hover:shadow-xl" 
+              style={{ animationDelay: '0.15s' }}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="text-lg">Create Today&apos;s Entry</span>
+            </button>
+          )}
         </div>
 
         {/* Search Bar */}
@@ -461,19 +475,6 @@ export default function Dashboard() {
                 onActiveStartDateChange={setActiveStartDate}
               />
             </div>
-
-            {!hasEntryToday && (
-              <button
-                onClick={handleWriteToday}
-                className="w-full btn-primary text-white font-semibold py-6 px-6 rounded-2xl transition-all duration-300 mb-8 flex items-center justify-center gap-3 animate-scale-in" 
-                style={{ animationDelay: '0.4s' }}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="text-lg">Create Today&apos;s Entry</span>
-              </button>
-            )}
           </>
         )}
 
