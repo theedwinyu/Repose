@@ -743,3 +743,81 @@ select:focus {
   transform: translateZ(0);
   backface-visibility: hidden;
 }
+
+/* ========================================
+   TASK LIST STYLES (CHECKBOXES)
+   ======================================== */
+
+/* Task list items */
+ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  user-select: none;
+  cursor: pointer;
+  margin-top: 0.125rem;
+}
+
+ul[data-type="taskList"] li > div {
+  flex: 1;
+  padding-top: 0.125rem;
+}
+
+ul[data-type="taskList"] input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--sage);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  appearance: none;
+  background-color: var(--soft-white);
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+ul[data-type="taskList"] input[type="checkbox"]:checked {
+  background-color: var(--sage);
+  border-color: var(--sage-dark);
+}
+
+ul[data-type="taskList"] input[type="checkbox"]:checked::after {
+  content: '✓';
+  display: block;
+  text-align: center;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  line-height: 0.9rem;
+}
+
+ul[data-type="taskList"] input[type="checkbox"]:hover {
+  border-color: var(--sage-dark);
+  box-shadow: 0 0 0 2px rgba(127, 197, 184, 0.1);
+}
+
+/* Strikethrough completed tasks */
+ul[data-type="taskList"] li[data-checked="true"] > div {
+  text-decoration: line-through;
+  color: var(--light-muted);
+}
+
+/* Nested task lists */
+ul[data-type="taskList"] ul[data-type="taskList"] {
+  margin-top: 0.5rem;
+  margin-left: 1.5rem;
+}
+
+/* Ensure proper paragraph spacing in task items */
+ul[data-type="taskList"] li > div > p {
+  margin: 0;
+}
