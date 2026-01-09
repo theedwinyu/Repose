@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { format, parse } from 'date-fns';
+import { format, parse, isToday } from 'date-fns';
 import { useFolderContext } from '../../context/FolderContext';
 import { readEntry, writeEntry, deleteEntry } from '../../lib/fileSystem';
 import Header from '../../components/Header';
@@ -10,6 +10,9 @@ import RichTextEditor from '../../components/RichTextEditor';
 import MoodSelector from '../../components/MoodSelector';
 import { JournalEntry } from '../../types';
 import Image from 'next/image';
+import { getWeatherContext } from '../../lib/weather';
+import WeatherDisplay from '../../components/WeatherDisplay';
+import { WeatherContext } from '../../types';
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -80,6 +83,8 @@ export default function JournalEditor() {
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  // Weather context
+  const [weatherContext, setWeatherContext] = useState<WeatherContext | null>(null);
   
   // Get mood-appropriate prompt
   const [currentPrompt, setCurrentPrompt] = useState('');
@@ -145,6 +150,30 @@ export default function JournalEditor() {
     loadEntry();
   }, [folderHandle, dateStr, router]);
 
+  // Fetch weather for new entries (only for today's date)
+  useEffect(() => {
+    const fetchWeather = async () => {
+      const entryDate = parse(dateStr, 'yyyy-MM-dd', new Date());
+      const isTodaysEntry = isToday(entryDate);
+      
+      // Only fetch weather if:
+      // 1. This is a new entry (not existing)
+      // 2. The entry date is TODAY (not past or future)
+      if (!isExisting && isTodaysEntry) {
+        try {
+          const weather = await getWeatherContext();
+          setWeatherContext(weather);
+        } catch (error) {
+          // User denied permission or error occurred
+          console.log('Weather not available:', error);
+          // Entry still saves without weather - no problem!
+        }
+      }
+    };
+
+    fetchWeather();
+  }, [isExisting, dateStr]);
+
   const autoSave = useCallback(async () => {
     if (!folderHandle || !title.trim() || !mood) {
       return;
@@ -157,6 +186,7 @@ export default function JournalEditor() {
         title: title.trim(),
         mood,
         timestamp: new Date().toISOString(),
+        weatherContext: weatherContext || undefined,
       };
 
       await writeEntry(folderHandle, dateStr, entry, body);
@@ -392,6 +422,16 @@ export default function JournalEditor() {
                 {title}
               </h1>
 
+              {/* Weather Display */}
+              {weatherContext && (
+                <div className="mb-6">
+                  <WeatherDisplay 
+                    weatherContext={weatherContext} 
+                    className="text-warm-gray"
+                  />
+                </div>
+              )}
+
               {/* Reading Stats */}
               <div className="flex items-center gap-6 mb-10 text-sm text-warm-gray">
                 <span className="flex items-center gap-2">
@@ -534,6 +574,16 @@ export default function JournalEditor() {
             <MoodSelector selected={mood} onChange={setMood} />
           </div>
 
+          {/* Weather Display */}
+          {weatherContext && (
+            <div className="mb-8">
+              <WeatherDisplay 
+                weatherContext={weatherContext} 
+                className=""
+              />
+            </div>
+          )}
+
           {/* Writing Prompt - Shows after mood selection */}
           {mood && showPrompt && currentPrompt && (
             <div className="mb-8 serene-card rounded-2xl p-6 border border-sage/15 bg-gradient-to-r from-sage/5 to-sky/5 relative">
@@ -607,7 +657,7 @@ export default function JournalEditor() {
                 setError('');
               }}
               placeholder="Give this a title..."
-              className="w-full bg-transparent border-0 border-b-2 border-sage/20 focus:border-sage text-charcoal px-0 py-4 focus:outline-none transition-all text-3xl md:text-4xl font-bold placeholder:text-light-muted tracking-tight"
+              className="w-full bg-transparent border-0 border-b-2 border-sage/20 focus:border-sage text-charcoal px-0 py-6 focus:outline-none transition-all text-3xl md:text-4xl font-bold placeholder:text-light-muted tracking-tight"
               style={{ fontFamily: 'var(--font-display)' }}
               autoFocus={!isExisting}
             />
