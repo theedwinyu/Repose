@@ -142,6 +142,11 @@ export default function JournalEditor() {
         setInitialMood(entry.mood);
         setIsExisting(true);
         setIsPreviewMode(true);
+        
+        // Load existing weather context if available
+        if (entry.weatherContext) {
+          setWeatherContext(entry.weatherContext);
+        }
       }
       
       setIsLoading(false);
