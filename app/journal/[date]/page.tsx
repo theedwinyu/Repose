@@ -210,7 +210,7 @@ export default function JournalEditor() {
         setSaveStatus('idle');
       }, 3000);
     }
-  }, [folderHandle, dateStr, title, body, mood, refreshEntries]);
+  }, [folderHandle, dateStr, title, body, mood, weatherContext, refreshEntries]);
 
   useEffect(() => {
     if (autoSaveTimerRef.current) {
