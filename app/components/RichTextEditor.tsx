@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -9,49 +9,42 @@ import TaskItem from '@tiptap/extension-task-item';
 
 interface RichTextEditorProps {
   content: string;
-  onChange: (html: string) => void;
+  onChange: (content: string) => void;
 }
 
-// Move ToolbarButton outside component to fix React hooks rules
-const ToolbarButton = ({
-  onClick,
-  isActive,
+const ToolbarButton = ({ 
+  onClick, 
+  isActive, 
+  children, 
   disabled = false,
-  title,
-  children,
-}: {
-  onClick: () => void;
-  isActive: boolean;
+  title 
+}: { 
+  onClick: () => void; 
+  isActive: boolean; 
+  children: React.ReactNode;
   disabled?: boolean;
   title?: string;
-  children: React.ReactNode;
 }) => (
   <button
-    onClick={onClick}
     type="button"
+    onClick={onClick}
     disabled={disabled}
     title={title}
-    className={`p-2.5 rounded-lg transition-all duration-200 ${
-      isActive 
-        ? 'bg-sage/15 text-charcoal' 
-        : 'text-warm-gray hover:bg-sage/8 hover:text-charcoal'
-    } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+    className={`
+      min-w-[32px] h-8 px-2 rounded-lg transition-all duration-200 flex items-center justify-center
+      ${isActive 
+        ? 'bg-sage text-charcoal shadow-sm font-semibold' 
+        : 'text-charcoal hover:bg-sage/10 bg-transparent'
+      }
+      ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:scale-105'}
+    `}
   >
     {children}
   </button>
 );
 
 export default function RichTextEditor({ content, onChange }: RichTextEditorProps) {
-  const [isClient, setIsClient] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setIsClient(true);
-    }, 0);
-    
-    return () => clearTimeout(timeoutId);
-  }, []);
+  const [showHint, setShowHint] = useState(true);
 
   const editor = useEditor({
     extensions: [
@@ -73,6 +66,24 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
       attributes: {
         class: 'prose prose-serene max-w-none min-h-[300px] focus:outline-none px-2 py-1',
       },
+      handleKeyDown: (view, event) => {
+        // Exit heading mode when pressing Enter
+        if (event.key === 'Enter' && !event.shiftKey) {
+          const { state } = view;
+          const { $from } = state.selection;
+          
+          // Check if we're in a heading
+          if ($from.parent.type.name.startsWith('heading')) {
+            // Let TipTap create the new line, then convert it to paragraph
+            setTimeout(() => {
+              if (editor) {
+                editor.chain().focus().setParagraph().run();
+              }
+            }, 0);
+          }
+        }
+        return false;
+      },
     },
   });
 
@@ -82,48 +93,24 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
     }
   }, [content, editor]);
 
-  const insertEmoji = (emoji: string) => {
-    if (editor) {
-      editor.chain().focus().insertContent(emoji).run();
-      setShowEmojiPicker(false);
-    }
-  };
-
-  const commonEmojis = [
-    '😊', '😌', '😔', '😢', '😐', '❤️', '🙏', '✨', '🌟', '💭',
-    '🎉', '😄', '😅', '😂', '🥰', '😍', '🤔', '😎', '🌈', '🌸',
-    '🌺', '🌻', '🌷', '🌹', '🍀', '🌿', '🌊', '⭐', '💫', '✅',
-  ];
-
-  if (!isClient) {
-    return (
-      <div className="serene-card rounded-xl p-4">
-        <div className="flex items-center justify-center py-8">
-          <div className="w-8 h-8 spinner-serene rounded-full"></div>
-        </div>
-      </div>
-    );
-  }
-
   if (!editor) {
     return (
-      <div className="serene-card rounded-xl p-4">
-        <div className="flex items-center justify-center py-8">
-          <div className="w-8 h-8 spinner-serene rounded-full"></div>
-        </div>
+      <div className="serene-card rounded-xl p-8 animate-pulse">
+        <div className="h-10 bg-sage/10 rounded mb-4"></div>
+        <div className="h-64 bg-sage/10 rounded"></div>
       </div>
     );
   }
 
   return (
-    <div className="serene-card rounded-xl overflow-hidden relative">
+    <div className="serene-card rounded-xl overflow-visible relative">
       {/* Toolbar */}
       <div className="border-b border-sage/10 p-3 flex items-center gap-1 flex-wrap bg-light-gray/30">
         {/* Text Formatting */}
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           isActive={editor.isActive('bold')}
-          title="Bold (Cmd+B)"
+          title="Bold (⌘B)"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 12h8a4 4 0 000-8H6v8zm0 0h9a4 4 0 010 8H6v-8z" />
@@ -133,10 +120,10 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleItalic().run()}
           isActive={editor.isActive('italic')}
-          title="Italic (Cmd+I)"
+          title="Italic (⌘I)"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 4h4M10 20h4M14 4l-4 16" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" transform="skewX(-10)" />
           </svg>
         </ToolbarButton>
 
@@ -146,19 +133,27 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           title="Strikethrough"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18M9 5h6M9 19h6" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18M9 5h6m-6 14h6" />
           </svg>
         </ToolbarButton>
 
         <div className="w-px h-6 bg-sage/20 mx-1" />
 
-        {/* Headings */}
+        {/* Headings + Normal Text */}
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setParagraph().run()}
+          isActive={editor.isActive('paragraph')}
+          title="Normal Text"
+        >
+          <span className="font-semibold text-sm text-current">P</span>
+        </ToolbarButton>
+
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
           isActive={editor.isActive('heading', { level: 1 })}
           title="Heading 1"
         >
-          <span className="font-bold text-base">H1</span>
+          <span className="font-bold text-sm text-current">H1</span>
         </ToolbarButton>
 
         <ToolbarButton
@@ -166,7 +161,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           isActive={editor.isActive('heading', { level: 2 })}
           title="Heading 2"
         >
-          <span className="font-bold text-sm">H2</span>
+          <span className="font-bold text-sm text-current">H2</span>
         </ToolbarButton>
 
         <ToolbarButton
@@ -174,24 +169,24 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           isActive={editor.isActive('heading', { level: 3 })}
           title="Heading 3"
         >
-          <span className="font-bold text-xs">H3</span>
+          <span className="font-bold text-sm text-current">H3</span>
         </ToolbarButton>
 
         <div className="w-px h-6 bg-sage/20 mx-1" />
 
-        {/* Lists - Fixed Icons */}
+        {/* Lists */}
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           isActive={editor.isActive('bulletList')}
           title="Bullet List"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <line x1="8" y1="6" x2="21" y2="6" strokeWidth="2" strokeLinecap="round" />
-            <line x1="8" y1="12" x2="21" y2="12" strokeWidth="2" strokeLinecap="round" />
-            <line x1="8" y1="18" x2="21" y2="18" strokeWidth="2" strokeLinecap="round" />
-            <circle cx="4" cy="6" r="1" fill="currentColor" />
-            <circle cx="4" cy="12" r="1" fill="currentColor" />
-            <circle cx="4" cy="18" r="1" fill="currentColor" />
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="5" cy="6" r="2" />
+            <circle cx="5" cy="12" r="2" />
+            <circle cx="5" cy="18" r="2" />
+            <line x1="10" y1="6" x2="21" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <line x1="10" y1="12" x2="21" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <line x1="10" y1="18" x2="21" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         </ToolbarButton>
 
@@ -200,7 +195,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           isActive={editor.isActive('orderedList')}
           title="Numbered List"
         >
-          <span className="font-semibold text-sm">1.</span>
+          <span className="font-semibold text-sm text-current">1.</span>
         </ToolbarButton>
 
         <ToolbarButton
@@ -221,15 +216,14 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
 
         <div className="w-px h-6 bg-sage/20 mx-1" />
 
-        {/* Block Elements */}
+        {/* Blocks */}
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           isActive={editor.isActive('blockquote')}
           title="Quote"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h8M8 13h6M9 17h4" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 9v8" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
         </ToolbarButton>
 
@@ -255,39 +249,11 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
 
         <div className="w-px h-6 bg-sage/20 mx-1" />
 
-        {/* Emoji Picker */}
-        <div className="relative">
-          <ToolbarButton
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            isActive={showEmojiPicker}
-            title="Insert Emoji"
-          >
-            <span className="text-lg">😊</span>
-          </ToolbarButton>
-
-          {showEmojiPicker && (
-            <div className="absolute top-full left-0 mt-2 bg-soft-white border border-sage/20 rounded-xl shadow-serene-lg p-3 z-50 grid grid-cols-10 gap-1 w-80">
-              {commonEmojis.map((emoji, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => insertEmoji(emoji)}
-                  className="w-7 h-7 flex items-center justify-center hover:bg-sage/10 rounded transition-colors text-lg"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="w-px h-6 bg-sage/20 mx-1" />
-
         {/* Actions */}
         <ToolbarButton
           onClick={() => editor.chain().focus().setHardBreak().run()}
           isActive={false}
-          title="Line Break (Shift+Enter)"
+          title="Line Break (⇧↵)"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -311,7 +277,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           onClick={() => editor.chain().focus().undo().run()}
           isActive={false}
           disabled={!editor.can().undo()}
-          title="Undo (Cmd+Z)"
+          title="Undo (⌘Z)"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -322,7 +288,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           onClick={() => editor.chain().focus().redo().run()}
           isActive={false}
           disabled={!editor.can().redo()}
-          title="Redo (Cmd+Shift+Z)"
+          title="Redo (⌘⇧Z)"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10H11a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6" />
@@ -330,18 +296,38 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
         </ToolbarButton>
       </div>
 
-      {/* Editor Content */}
-      <div className="p-6 bg-cream">
+      {/* Editor */}
+      <div className="p-6">
         <EditorContent editor={editor} />
       </div>
 
-      {/* Click outside to close emoji picker */}
-      {showEmojiPicker && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowEmojiPicker(false)}
-        />
-      )}
+      {/* Collapsible Emoji Hint */}
+      <div className="px-6 pb-4">
+        <button
+          onClick={() => setShowHint(!showHint)}
+          className="flex items-center gap-2 text-xs text-warm-gray hover:text-charcoal transition-colors group"
+        >
+          <svg 
+            className={`w-3 h-3 transition-transform ${showHint ? 'rotate-90' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          <span className="group-hover:underline">
+            {showHint ? 'Hide emoji tip' : 'Show emoji tip'}
+          </span>
+        </button>
+        
+        {showHint && (
+          <div className="mt-2 ml-5 text-xs text-warm-gray">
+            💡 <span className="font-medium">Mac:</span> Press <kbd className="px-1.5 py-0.5 bg-white rounded shadow-sm text-charcoal">⌃⌘Space</kbd> for emojis
+            <br />
+            <span className="ml-4 font-medium">Windows:</span> Press <kbd className="px-1.5 py-0.5 bg-white rounded shadow-sm text-charcoal">Win</kbd>+<kbd className="px-1.5 py-0.5 bg-white rounded shadow-sm text-charcoal">.</kbd> or <kbd className="px-1.5 py-0.5 bg-white rounded shadow-sm text-charcoal">Win</kbd>+<kbd className="px-1.5 py-0.5 bg-white rounded shadow-sm text-charcoal">;</kbd>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
