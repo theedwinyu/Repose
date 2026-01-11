@@ -46,6 +46,7 @@ const ToolbarButton = ({
 
 export default function RichTextEditor({ content, onChange }: RichTextEditorProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
   const [savedSelection, setSavedSelection] = useState<any>(null);
 
   const editor = useEditor({
