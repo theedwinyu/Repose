@@ -46,6 +46,7 @@ const ToolbarButton = ({
 
 export default function RichTextEditor({ content, onChange }: RichTextEditorProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [savedSelection, setSavedSelection] = useState<any>(null);
 
   const editor = useEditor({
     extensions: [
@@ -71,6 +72,14 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
         // Emoji picker shortcut (Cmd+E or Ctrl+E)
         if ((event.metaKey || event.ctrlKey) && event.key === 'e') {
           event.preventDefault();
+          
+          // Save current selection position
+          const { state } = view;
+          setSavedSelection({
+            from: state.selection.from,
+            to: state.selection.to,
+          });
+          
           setShowEmojiPicker(true);
           return true;
         }
@@ -260,7 +269,14 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
         {/* Emoji Picker */}
         <div className="relative">
           <ToolbarButton
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            onClick={() => {
+              // Save current cursor position when clicking button too
+              if (editor) {
+                const { from, to } = editor.state.selection;
+                setSavedSelection({ from, to });
+              }
+              setShowEmojiPicker(!showEmojiPicker);
+            }}
             isActive={showEmojiPicker}
             title="Insert Emoji (⌘E)"
           >
@@ -334,8 +350,19 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           <div className="fixed z-[999] mt-2" style={{ top: '120px', left: '50%', transform: 'translateX(-50%)' }}>
             <EmojiPicker
               onEmojiClick={(emojiData) => {
-                editor.chain().focus().insertContent(emojiData.emoji).run();
+                if (editor && savedSelection) {
+                  // Insert emoji at saved cursor position without focusing (which would scroll)
+                  editor
+                    .chain()
+                    .setTextSelection(savedSelection.from)
+                    .insertContent(emojiData.emoji)
+                    .run();
+                } else if (editor) {
+                  // Fallback: insert at current position
+                  editor.chain().insertContent(emojiData.emoji).run();
+                }
                 setShowEmojiPicker(false);
+                setSavedSelection(null);
               }}
               width={350}
               height={400}
