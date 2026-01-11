@@ -68,6 +68,13 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
         class: 'prose prose-serene max-w-none min-h-[300px] focus:outline-none px-2 py-1',
       },
       handleKeyDown: (view, event) => {
+        // Emoji picker shortcut (Cmd+E or Ctrl+E)
+        if ((event.metaKey || event.ctrlKey) && event.key === 'e') {
+          event.preventDefault();
+          setShowEmojiPicker(true);
+          return true;
+        }
+
         // Exit heading mode when pressing Enter
         if (event.key === 'Enter' && !event.shiftKey) {
           const { state } = view;
@@ -255,7 +262,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           <ToolbarButton
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             isActive={showEmojiPicker}
-            title="Insert Emoji"
+            title="Insert Emoji (⌘E)"
           >
             <span className="text-lg">😊</span>
           </ToolbarButton>
