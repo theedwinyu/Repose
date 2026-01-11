@@ -662,7 +662,7 @@ export default function JournalEditor() {
                 setError('');
               }}
               placeholder="Give this a title..."
-              className="w-full bg-transparent border-0 border-b-2 border-sage/20 focus:border-sage text-charcoal px-0 py-6 focus:outline-none transition-all text-3xl md:text-4xl font-bold placeholder:text-light-muted tracking-tight"
+              className="w-full bg-transparent border-0 border-b-2 border-sage/20 focus:border-sage text-charcoal px-0 py-6 focus:outline-none transition-all text-3xl md:text-4xl font-bold placeholder:text-light-muted tracking-tight pl-4 md:pl-4"
               style={{ fontFamily: 'var(--font-display)' }}
               autoFocus={!isExisting}
             />

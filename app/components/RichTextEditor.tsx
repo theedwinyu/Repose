@@ -6,7 +6,6 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
-import EmojiPicker from 'emoji-picker-react';
 
 interface RichTextEditorProps {
   content: string;
@@ -45,9 +44,7 @@ const ToolbarButton = ({
 );
 
 export default function RichTextEditor({ content, onChange }: RichTextEditorProps) {
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-  const [savedSelection, setSavedSelection] = useState<any>(null);
+  const [showHint, setShowHint] = useState(true);
 
   const editor = useEditor({
     extensions: [
@@ -70,21 +67,6 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
         class: 'prose prose-serene max-w-none min-h-[300px] focus:outline-none px-2 py-1',
       },
       handleKeyDown: (view, event) => {
-        // Emoji picker shortcut (Cmd+E or Ctrl+E)
-        if ((event.metaKey || event.ctrlKey) && event.key === 'e') {
-          event.preventDefault();
-          
-          // Save current selection position
-          const { state } = view;
-          setSavedSelection({
-            from: state.selection.from,
-            to: state.selection.to,
-          });
-          
-          setShowEmojiPicker(true);
-          return true;
-        }
-
         // Exit heading mode when pressing Enter
         if (event.key === 'Enter' && !event.shiftKey) {
           const { state } = view;
@@ -128,7 +110,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           isActive={editor.isActive('bold')}
-          title="Bold (Cmd+B)"
+          title="Bold (⌘B)"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 12h8a4 4 0 000-8H6v8zm0 0h9a4 4 0 010 8H6v-8z" />
@@ -138,7 +120,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleItalic().run()}
           isActive={editor.isActive('italic')}
-          title="Italic (Cmd+I)"
+          title="Italic (⌘I)"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" transform="skewX(-10)" />
@@ -267,31 +249,11 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
 
         <div className="w-px h-6 bg-sage/20 mx-1" />
 
-        {/* Emoji Picker */}
-        <div className="relative">
-          <ToolbarButton
-            onClick={() => {
-              // Save current cursor position when clicking button too
-              if (editor) {
-                const { from, to } = editor.state.selection;
-                setSavedSelection({ from, to });
-              }
-              setShowEmojiPicker(!showEmojiPicker);
-            }}
-            isActive={showEmojiPicker}
-            title="Insert Emoji (⌘E)"
-          >
-            <span className="text-lg">😊</span>
-          </ToolbarButton>
-        </div>
-
-        <div className="w-px h-6 bg-sage/20 mx-1" />
-
         {/* Actions */}
         <ToolbarButton
           onClick={() => editor.chain().focus().setHardBreak().run()}
           isActive={false}
-          title="Line Break (Shift+Enter)"
+          title="Line Break (⇧↵)"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -315,7 +277,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           onClick={() => editor.chain().focus().undo().run()}
           isActive={false}
           disabled={!editor.can().undo()}
-          title="Undo (Cmd+Z)"
+          title="Undo (⌘Z)"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -326,7 +288,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
           onClick={() => editor.chain().focus().redo().run()}
           isActive={false}
           disabled={!editor.can().redo()}
-          title="Redo (Cmd+Shift+Z)"
+          title="Redo (⌘⇧Z)"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10H11a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6" />
@@ -339,39 +301,33 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
         <EditorContent editor={editor} />
       </div>
 
-      {/* Emoji Picker Portal */}
-      {showEmojiPicker && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-[998]"
-            onClick={() => setShowEmojiPicker(false)}
-          />
-          {/* Picker */}
-          <div className="fixed z-[999] mt-2" style={{ top: '120px', left: '50%', transform: 'translateX(-50%)' }}>
-            <EmojiPicker
-              onEmojiClick={(emojiData) => {
-                if (editor && savedSelection) {
-                  // Insert emoji at saved cursor position without focusing (which would scroll)
-                  editor
-                    .chain()
-                    .setTextSelection(savedSelection.from)
-                    .insertContent(emojiData.emoji)
-                    .run();
-                } else if (editor) {
-                  // Fallback: insert at current position
-                  editor.chain().insertContent(emojiData.emoji).run();
-                }
-                setShowEmojiPicker(false);
-                setSavedSelection(null);
-              }}
-              width={350}
-              height={400}
-              previewConfig={{ showPreview: false }}
-            />
+      {/* Collapsible Emoji Hint */}
+      <div className="px-6 pb-4">
+        <button
+          onClick={() => setShowHint(!showHint)}
+          className="flex items-center gap-2 text-xs text-warm-gray hover:text-charcoal transition-colors group"
+        >
+          <svg 
+            className={`w-3 h-3 transition-transform ${showHint ? 'rotate-90' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          <span className="group-hover:underline">
+            {showHint ? 'Hide emoji tip' : 'Show emoji tip'}
+          </span>
+        </button>
+        
+        {showHint && (
+          <div className="mt-2 ml-5 text-xs text-warm-gray">
+            💡 <span className="font-medium">Mac:</span> Press <kbd className="px-1.5 py-0.5 bg-white rounded shadow-sm text-charcoal">⌃⌘Space</kbd> for emojis
+            <br />
+            <span className="ml-4 font-medium">Windows:</span> Press <kbd className="px-1.5 py-0.5 bg-white rounded shadow-sm text-charcoal">Win</kbd>+<kbd className="px-1.5 py-0.5 bg-white rounded shadow-sm text-charcoal">.</kbd> or <kbd className="px-1.5 py-0.5 bg-white rounded shadow-sm text-charcoal">Win</kbd>+<kbd className="px-1.5 py-0.5 bg-white rounded shadow-sm text-charcoal">;</kbd>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
