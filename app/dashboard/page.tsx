@@ -7,6 +7,10 @@ import dynamic from 'next/dynamic';
 import { useFolderContext } from '../context/FolderContext';
 import { readEntry } from '../lib/fileSystem';
 import Header from '../components/Header';
+import TagCloud from '../components/TagCloud';
+import TagManagement from '../components/TagManagement';
+import { getAllTags, filterEntriesByTags, renameTagInEntries, deleteTagFromEntries, mergeTagsInEntries } from '../utils/tagUtils';
+import { getTagColor } from '../types';
 import type { Mood } from "../types";
 
 // PERFORMANCE: Dynamic import Calendar to reduce initial bundle
@@ -34,8 +38,11 @@ export default function Dashboard() {
   const [activeStartDate, setActiveStartDate] = useState<Date>(new Date());
   const [isMounted, setIsMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(''); // PERFORMANCE: Debounced search
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [greeting, setGreeting] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [showTagManagement, setShowTagManagement] = useState(false);
+  const [isUpdatingTags, setIsUpdatingTags] = useState(false);
 
   const [searchableEntries, setSearchableEntries] = useState<Array<{
     dateStr: string;
@@ -43,6 +50,7 @@ export default function Dashboard() {
     mood: Mood,
     timestamp: string;
     content: string;
+    tags?: string[];
   }>>([]);
 
   // PERFORMANCE: Debounce search input (300ms)
@@ -54,7 +62,10 @@ export default function Dashboard() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // PERFORMANCE: Memoized fuse instance (only recreates when searchableEntries changes)
+  // Get all available tags
+  const allTags = useMemo(() => getAllTags(entries), [entries]);
+
+  // PERFORMANCE: Memoized fuse instance with tags support
   const fuse = useMemo(() => {
     if (!Fuse || searchableEntries.length === 0) return null;
     
@@ -62,6 +73,7 @@ export default function Dashboard() {
       keys: [
         { name: 'title', weight: 2 },
         { name: 'content', weight: 1 },
+        { name: 'tags', weight: 1.5 },
       ],
       threshold: 0.3,
       includeScore: true,
@@ -70,19 +82,24 @@ export default function Dashboard() {
     });
   }, [searchableEntries]);
 
-  // Move filtered entries logic before early returns
+  // Filter entries by tags first, then by search query
   const filteredEntries = useMemo(() => {
     if (!entries) return [];
     
-    // PERFORMANCE: Use debounced search query
+    // First apply tag filter (always use OR logic)
+    let tagFiltered = entries;
+    if (selectedTags.length > 0) {
+      tagFiltered = filterEntriesByTags(entries, selectedTags, 'OR');
+    }
+    
+    // Then apply search filter
     if (!debouncedSearchQuery.trim()) {
-      return Array.from(entries.entries())
+      return Array.from(tagFiltered.entries())
         .sort((a, b) => b[1].timestamp.localeCompare(a[1].timestamp));
     }
 
-    // PERFORMANCE: Check if fuse is loaded
     if (!fuse) {
-      return Array.from(entries.entries())
+      return Array.from(tagFiltered.entries())
         .sort((a, b) => b[1].timestamp.localeCompare(a[1].timestamp));
     }
 
@@ -91,11 +108,11 @@ export default function Dashboard() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return results.map((result: any) => {
       const dateStr = result.item.dateStr;
-      const entry = entries.get(dateStr);
+      const entry = tagFiltered.get(dateStr);
       return [dateStr, entry] as [string, typeof entry];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }).filter((item: any): item is [string, NonNullable<typeof item[1]>] => item[1] !== undefined);
-  }, [debouncedSearchQuery, entries, fuse]);
+  }, [debouncedSearchQuery, entries, fuse, selectedTags]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -134,6 +151,7 @@ export default function Dashboard() {
               mood: entry.mood,
               timestamp: entry.timestamp,
               content: textContent,
+              tags: entry.tags || [],
             };
           } catch (err) {
             console.error(`Failed to load entry ${dateStr}:`, err);
@@ -143,6 +161,7 @@ export default function Dashboard() {
               mood: entry.mood,
               timestamp: entry.timestamp,
               content: '',
+              tags: entry.tags || [],
             };
           }
         })
@@ -156,13 +175,141 @@ export default function Dashboard() {
     }
   }, [entries, folderHandle]);
 
+  // Tag management handlers
+  const handleRenameTag = async (oldTag: string, newTag: string) => {
+    if (!folderHandle) return;
+    
+    setIsUpdatingTags(true);
+    try {
+      const updatedEntries = renameTagInEntries(entries, oldTag, newTag);
+      
+      const { writeEntry } = await import('../lib/fileSystem');
+      
+      // Only write entries that were actually updated
+      for (const [dateStr, entry] of updatedEntries) {
+        const fullEntry = await readEntry(folderHandle, dateStr);
+        if (fullEntry) {
+          await writeEntry(folderHandle, dateStr, {
+            title: fullEntry.title,
+            mood: fullEntry.mood,
+            timestamp: fullEntry.timestamp,
+            weatherContext: fullEntry.weatherContext,
+            tags: entry.tags,
+            createdAt: entry.createdAt,
+            updatedAt: entry.updatedAt,
+          }, fullEntry.body);
+        }
+      }
+      
+      // Update all entries in state, not just updated ones
+      const newEntries = new Map(entries);
+      updatedEntries.forEach((entry, dateStr) => {
+        newEntries.set(dateStr, entry);
+      });
+      setEntries(newEntries);
+      
+      if (selectedTags.includes(oldTag)) {
+        setSelectedTags(prev => prev.map(t => t === oldTag ? newTag : t));
+      }
+    } catch (error) {
+      console.error('Failed to rename tag:', error);
+      throw error;
+    } finally {
+      setIsUpdatingTags(false);
+    }
+  };
+
+  const handleDeleteTag = async (tag: string) => {
+    if (!folderHandle) return;
+    
+    setIsUpdatingTags(true);
+    try {
+      const updatedEntries = deleteTagFromEntries(entries, tag);
+      
+      const { writeEntry } = await import('../lib/fileSystem');
+      for (const [dateStr, entry] of updatedEntries) {
+        const fullEntry = await readEntry(folderHandle, dateStr);
+        if (fullEntry) {
+          await writeEntry(folderHandle, dateStr, {
+            title: fullEntry.title,
+            mood: fullEntry.mood,
+            timestamp: fullEntry.timestamp,
+            weatherContext: fullEntry.weatherContext,
+            tags: entry.tags,
+            createdAt: entry.createdAt,
+            updatedAt: entry.updatedAt,
+          }, fullEntry.body);
+        }
+      }
+      
+      const newEntries = new Map(entries);
+      updatedEntries.forEach((entry, dateStr) => {
+        newEntries.set(dateStr, entry);
+      });
+      setEntries(newEntries);
+      
+      setSelectedTags(prev => prev.filter(t => t !== tag));
+    } catch (error) {
+      console.error('Failed to delete tag:', error);
+      throw error;
+    } finally {
+      setIsUpdatingTags(false);
+    }
+  };
+
+  const handleMergeTags = async (tagsToMerge: string[], targetTag: string) => {
+    if (!folderHandle) return;
+    
+    setIsUpdatingTags(true);
+    try {
+      const updatedEntries = mergeTagsInEntries(entries, tagsToMerge, targetTag);
+      
+      const { writeEntry } = await import('../lib/fileSystem');
+      for (const [dateStr, entry] of updatedEntries) {
+        const fullEntry = await readEntry(folderHandle, dateStr);
+        if (fullEntry) {
+          await writeEntry(folderHandle, dateStr, {
+            title: fullEntry.title,
+            mood: fullEntry.mood,
+            timestamp: fullEntry.timestamp,
+            weatherContext: fullEntry.weatherContext,
+            tags: entry.tags,
+            createdAt: entry.createdAt,
+            updatedAt: entry.updatedAt,
+          }, fullEntry.body);
+        }
+      }
+      
+      const newEntries = new Map(entries);
+      updatedEntries.forEach((entry, dateStr) => {
+        newEntries.set(dateStr, entry);
+      });
+      setEntries(newEntries);
+      
+      setSelectedTags(prev => {
+        const filtered = prev.filter(t => !tagsToMerge.includes(t));
+        return filtered.includes(targetTag) ? filtered : [...filtered, targetTag];
+      });
+    } catch (error) {
+      console.error('Failed to merge tags:', error);
+      throw error;
+    } finally {
+      setIsUpdatingTags(false);
+    }
+  };
+
+  const handleTagClick = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
   if (!isMounted || !folderHandle || !userConfig) {
     return null;
   }
 
   const totalEntries = entries.size;
 
-  // Mood counts with migration support
   const moodCounts = {
     peaceful: 0,
     content: 0,
@@ -173,18 +320,15 @@ export default function Dashboard() {
 
   entries.forEach((entry) => {
     const mood = entry.mood;
-    
     if (mood in moodCounts) {
       moodCounts[mood as keyof typeof moodCounts]++;
     }
   });
 
-  // Calculate total words written across all entries
   const calculateTotalWords = () => {
     let totalWords = 0;
     searchableEntries.forEach((entry) => {
       if (entry.content) {
-        // Remove HTML tags and count words
         const text = entry.content.replace(/<[^>]*>/g, ' ');
         const words = text.trim().split(/\s+/).filter(word => word.length > 0);
         totalWords += words.length;
@@ -205,7 +349,7 @@ export default function Dashboard() {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const hasEntryToday = entries.has(todayStr);
 
-  const recentEntries = searchQuery.trim() 
+  const recentEntries = (searchQuery.trim() || selectedTags.length > 0)
     ? filteredEntries.slice(0, 10)
     : filteredEntries.slice(0, 5);
 
@@ -280,7 +424,7 @@ export default function Dashboard() {
       <Header title="Dashboard" />
 
       <main className="max-w-7xl mx-auto p-6">
-        {/* Welcome Section */}
+        {/* Welcome Section - ORIGINAL LAYOUT */}
         <div className="mb-10">
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
@@ -299,7 +443,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Week Activity Heatmap */}
+          {/* Week Activity Heatmap - ORIGINAL */}
           <div className="serene-card rounded-2xl p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-charcoal uppercase tracking-wider">Your Week</h3>
@@ -324,7 +468,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Create Today's Entry Button - Primary CTA */}
+          {/* Create Today's Entry Button - ORIGINAL */}
           {!hasEntryToday && (
             <button
               onClick={handleWriteToday}
@@ -339,7 +483,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar - ORIGINAL */}
         <div className="mb-8 animate-slide-in" style={{ animationDelay: '0.1s' }}>
           <div className="relative">
             <input
@@ -380,9 +524,9 @@ export default function Dashboard() {
           )}
         </div>
 
-        {!searchQuery && (
+        {!searchQuery && !selectedTags.length && (
           <>
-            {/* Summary Cards */}
+            {/* Summary Cards - ORIGINAL */}
             <div className="grid grid-cols-2 gap-4 mb-8 animate-scale-in" style={{ animationDelay: '0.2s' }}>
               <div className="serene-card bg-gradient-to-br from-sage/8 to-sage-light/5 rounded-2xl p-6 text-center card-hover">
                 <div className="text-4xl mb-3">📔</div>
@@ -397,7 +541,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Emotional Landscape - Mood Bar Chart */}
+            {/* Emotional Landscape - ORIGINAL with tag cloud added */}
             <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.25s' }}>
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-charcoal tracking-tight mb-1" style={{ fontFamily: 'var(--font-display)' }}>
@@ -407,8 +551,6 @@ export default function Dashboard() {
                   {totalEntries} {totalEntries === 1 ? 'reflection' : 'reflections'} recorded
                 </p>
               </div>
-              
-              <div className="divider-wave mb-6" />
 
               <div className="space-y-4">
                 {[
@@ -419,7 +561,7 @@ export default function Dashboard() {
                   { mood: 'heavy', emoji: '😢', label: 'Heavy', color: 'sky', count: moodCounts.heavy },
                 ].map(({ mood, emoji, label, color, count }) => {
                   const percentage = totalEntries > 0 ? (count / totalEntries) * 100 : 0;
-                  const barWidth = count > 0 ? Math.max(percentage, 5) : 0; // Minimum 5% if count > 0
+                  const barWidth = count > 0 ? Math.max(percentage, 5) : 0;
                   
                   return (
                     <div key={mood} className="flex items-center gap-4">
@@ -451,7 +593,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Calendar Section */}
+            {/* Calendar Section - ORIGINAL */}
             <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.3s' }}>
               <div className="flex items-center justify-between mb-6">
                 <div>
@@ -478,25 +620,66 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* Recent/Search Results */}
+        {/* Tags Card - NEW Separate Card - ALWAYS VISIBLE */}
+        {allTags.length > 0 && (
+          <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.28s' }}>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-2xl font-bold text-charcoal tracking-tight mb-1" style={{ fontFamily: 'var(--font-display)' }}>
+                  Your Tags
+                </h3>
+                <p className="text-sm text-warm-gray">
+                  {selectedTags.length > 0 
+                    ? `Filtering by ${selectedTags.length} ${selectedTags.length === 1 ? 'tag' : 'tags'}`
+                    : `${allTags.length} ${allTags.length === 1 ? 'tag' : 'tags'} to organize your reflections`
+                  }
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                {selectedTags.length > 0 && (
+                  <button
+                    onClick={() => setSelectedTags([])}
+                    className="text-sm text-warm-gray hover:text-sage transition-colors font-medium"
+                  >
+                    Clear filters
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowTagManagement(true)}
+                  className="btn-secondary text-charcoal font-semibold py-2.5 px-5 rounded-xl transition-all duration-200 text-sm"
+                >
+                  Manage Tags
+                </button>
+              </div>
+            </div>
+            
+            <TagCloud
+              entries={entries}
+              onTagClick={handleTagClick}
+              selectedTags={selectedTags}
+              maxTags={20}
+            />
+          </div>
+        )}
+
+        {/* Recent/Search Results - ORIGINAL with tags added */}
         <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.5s' }}>
-          <div className="divider-wave mb-6" />
           <h3 className="text-2xl font-bold text-charcoal mb-6 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
-            {searchQuery ? 'Search Results' : 'Recent Reflections'}
+            {searchQuery || selectedTags.length > 0 ? 'Search Results' : 'Recent Reflections'}
           </h3>
           
           {recentEntries.length === 0 ? (
             <div className="text-center py-20 wave-empty-state">
               <div className="text-7xl mb-6 animate-gentle-float">
-                {searchQuery ? '🔍' : '🌸'}
+                {searchQuery || selectedTags.length > 0 ? '🔍' : '🌸'}
               </div>
               <p className="text-charcoal text-2xl mb-3 font-semibold">
-                {searchQuery ? 'No entries found' : 'Begin your peaceful practice'}
+                {searchQuery || selectedTags.length > 0 ? 'No entries found' : 'Begin your peaceful practice'}
               </p>
               <p className="text-warm-gray mb-8">
-                {searchQuery ? 'Try different keywords' : 'Your journey starts with a single thought'}
+                {searchQuery || selectedTags.length > 0 ? 'Try different keywords or tags' : 'Your journey starts with a single thought'}
               </p>
-              {!searchQuery && (
+              {!searchQuery && selectedTags.length === 0 && (
                 <button
                   onClick={handleWriteToday}
                   className="inline-flex items-center gap-2 btn-primary text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300"
@@ -529,6 +712,23 @@ export default function Dashboard() {
                       <p className="text-warm-gray text-sm font-medium mb-2">
                         {format(parse(dateStr, 'yyyy-MM-dd', new Date()), 'MMMM d, yyyy • EEEE')}
                       </p>
+                      {entry.tags && entry.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {entry.tags.slice(0, 3).map((tag: string) => (
+                            <span
+                              key={tag}
+                              className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getTagColor(tag)}`}
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                          {entry.tags.length > 3 && (
+                            <span className="px-2 py-0.5 text-xs text-warm-gray">
+                              +{entry.tags.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {preview && (
                         <p className="text-light-muted text-xs leading-relaxed line-clamp-2">
                           {preview}
@@ -545,7 +745,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer - ORIGINAL */}
         <div className="text-center flex items-center justify-center gap-6 text-sm">
           <button
             onClick={handleChangeFolder}
@@ -559,6 +759,27 @@ export default function Dashboard() {
           </span>
         </div>
       </main>
+
+      {/* Tag Management Modal */}
+      {showTagManagement && (
+        <TagManagement
+          entries={entries}
+          onRenameTag={handleRenameTag}
+          onDeleteTag={handleDeleteTag}
+          onMergeTags={handleMergeTags}
+          onClose={() => setShowTagManagement(false)}
+        />
+      )}
+
+      {/* Processing Overlay */}
+      {isUpdatingTags && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-6 shadow-2xl flex items-center gap-3">
+            <div className="w-6 h-6 spinner-serene rounded-full"></div>
+            <span className="text-charcoal font-medium">Updating tags...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

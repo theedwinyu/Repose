@@ -8,7 +8,9 @@ import { readEntry, writeEntry, deleteEntry } from '../../lib/fileSystem';
 import Header from '../../components/Header';
 import RichTextEditor from '../../components/RichTextEditor';
 import MoodSelector from '../../components/MoodSelector';
-import { JournalEntry } from '../../types';
+import TagInput from '../../components/TagInput';
+import { JournalEntry, getTagColor } from '../../types';
+import { getSuggestedTags } from '../../utils/tagUtils';
 import Image from 'next/image';
 import { getWeatherContext } from '../../lib/weather';
 import WeatherDisplay from '../../components/WeatherDisplay';
@@ -69,11 +71,12 @@ export default function JournalEditor() {
   const router = useRouter();
   const params = useParams();
   const dateStr = params.date as string;
-  const { folderHandle, refreshEntries } = useFolderContext();
+  const { folderHandle, refreshEntries, entries } = useFolderContext();
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [mood, setMood] = useState<'peaceful' | 'content' | 'neutral' | 'reflective' | 'heavy' | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [error, setError] = useState('');
@@ -113,6 +116,7 @@ export default function JournalEditor() {
   const [initialTitle, setInitialTitle] = useState('');
   const [initialBody, setInitialBody] = useState('');
   const [initialMood, setInitialMood] = useState<'peaceful' | 'content' | 'neutral' | 'reflective' | 'heavy' | null>(null);
+  const [initialTags, setInitialTags] = useState<string[]>([]);
 
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -137,9 +141,11 @@ export default function JournalEditor() {
         setTitle(entry.title);
         setBody(entry.body);
         setMood(entry.mood);
+        setTags(entry.tags || []);
         setInitialTitle(entry.title);
         setInitialBody(entry.body);
         setInitialMood(entry.mood);
+        setInitialTags(entry.tags || []);
         setIsExisting(true);
         setIsPreviewMode(true);
         
@@ -192,6 +198,9 @@ export default function JournalEditor() {
         mood,
         timestamp: new Date().toISOString(),
         weatherContext: weatherContext || undefined,
+        tags: tags,
+        createdAt: isExisting ? undefined : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       await writeEntry(folderHandle, dateStr, entry, body);
@@ -199,6 +208,7 @@ export default function JournalEditor() {
       setInitialTitle(title);
       setInitialBody(body);
       setInitialMood(mood);
+      setInitialTags(tags);
       
       setSaveStatus('saved');
       setLastSavedTime(new Date());
@@ -215,7 +225,7 @@ export default function JournalEditor() {
         setSaveStatus('idle');
       }, 3000);
     }
-  }, [folderHandle, dateStr, title, body, mood, weatherContext, refreshEntries]);
+  }, [folderHandle, dateStr, title, body, mood, tags, weatherContext, refreshEntries, isExisting]);
 
   useEffect(() => {
     if (autoSaveTimerRef.current) {
@@ -225,7 +235,8 @@ export default function JournalEditor() {
     const hasChanges = 
       title !== initialTitle ||
       body !== initialBody ||
-      mood !== initialMood;
+      mood !== initialMood ||
+      JSON.stringify(tags) !== JSON.stringify(initialTags);
 
     if (hasChanges && title.trim() && mood && !isPreviewMode) {
       autoSaveTimerRef.current = setTimeout(() => {
@@ -238,13 +249,14 @@ export default function JournalEditor() {
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [title, body, mood, initialTitle, initialBody, initialMood, autoSave, isPreviewMode]);
+  }, [title, body, mood, tags, initialTitle, initialBody, initialMood, initialTags, autoSave, isPreviewMode]);
 
   useEffect(() => {
     const hasUnsavedChanges = 
       (title !== initialTitle ||
       body !== initialBody ||
-      mood !== initialMood) && saveStatus !== 'saved';
+      mood !== initialMood ||
+      JSON.stringify(tags) !== JSON.stringify(initialTags)) && saveStatus !== 'saved';
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges && !isPreviewMode) {
@@ -255,7 +267,7 @@ export default function JournalEditor() {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [title, body, mood, initialTitle, initialBody, initialMood, saveStatus, isPreviewMode]);
+  }, [title, body, mood, tags, initialTitle, initialBody, initialMood, initialTags, saveStatus, isPreviewMode]);
 
   if (!folderHandle) {
     return null;
@@ -310,7 +322,8 @@ export default function JournalEditor() {
     const hasUnsavedChanges = 
       title !== initialTitle ||
       body !== initialBody ||
-      mood !== initialMood;
+      mood !== initialMood ||
+      JSON.stringify(tags) !== JSON.stringify(initialTags);
 
     if (hasUnsavedChanges && saveStatus !== 'saved' && !isPreviewMode) {
       setShowUnsavedDialog(true);
@@ -323,7 +336,8 @@ export default function JournalEditor() {
     const hasUnsavedChanges = 
       title !== initialTitle ||
       body !== initialBody ||
-      mood !== initialMood;
+      mood !== initialMood ||
+      JSON.stringify(tags) !== JSON.stringify(initialTags);
 
     if (hasUnsavedChanges && saveStatus !== 'saved' && !isPreviewMode) {
       setShowUnsavedDialog(true);
@@ -434,6 +448,22 @@ export default function JournalEditor() {
                     weatherContext={weatherContext} 
                     className="text-warm-gray"
                   />
+                </div>
+              )}
+
+              {/* Tags Display */}
+              {tags && tags.length > 0 && (
+                <div className="mb-6">
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium border ${getTagColor(tag)}`}
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -588,6 +618,17 @@ export default function JournalEditor() {
               />
             </div>
           )}
+
+          {/* Tags Input */}
+          <div className="mb-8">
+            <h4 className="text-sm font-semibold text-charcoal mb-3">Tags</h4>
+            <TagInput
+              tags={tags}
+              onChange={setTags}
+              suggestions={getSuggestedTags(entries, 10)}
+              placeholder="Add tags to organize your entry..."
+            />
+          </div>
 
           {/* Writing Prompt - Shows after mood selection */}
           {mood && showPrompt && currentPrompt && (
