@@ -34,11 +34,6 @@ export default function TagInput({
     .slice(0, 5);
 
   useEffect(() => {
-    // Reset selected index when suggestions change
-    setSelectedIndex(-1);
-  }, [input]);
-
-  useEffect(() => {
     // Handle click outside to close suggestions
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -122,6 +117,7 @@ export default function TagInput({
     setInput(value);
     setError('');
     setShowSuggestions(value.length > 0);
+    setSelectedIndex(-1); // Reset selection when input changes
   };
 
   return (

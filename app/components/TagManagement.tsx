@@ -75,7 +75,7 @@ export default function TagManagement({
       setEditingTag(null);
       setNewTagName('');
       setSelectedTags([]); // Clear selections after rename
-    } catch (error) {
+    } catch {
       alert('Failed to rename tag');
     } finally {
       setIsProcessing(false);
@@ -91,7 +91,7 @@ export default function TagManagement({
     try {
       await onDeleteTag(tag);
       setSelectedTags(prev => prev.filter(t => t !== tag)); // Remove deleted tag from selection
-    } catch (error) {
+    } catch {
       alert('Failed to delete tag');
     } finally {
       setIsProcessing(false);
@@ -115,7 +115,7 @@ export default function TagManagement({
       setSelectedTags([]);
       setMergeTarget('');
       setShowMergeDialog(false);
-    } catch (error) {
+    } catch {
       alert('Failed to merge tags');
     } finally {
       setIsProcessing(false);
