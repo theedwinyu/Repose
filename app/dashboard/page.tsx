@@ -483,66 +483,23 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Search Bar - ORIGINAL */}
-        <div className="mb-8 animate-slide-in" style={{ animationDelay: '0.1s' }}>
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search your reflections..."
-              className="w-full bg-soft-white border border-sage/20 text-charcoal pl-12 pr-5 py-4 rounded-xl focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/10 transition-all placeholder:text-light-muted shadow-serene"
-            />
-            <svg className="w-5 h-5 text-warm-gray absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-gray hover:text-charcoal transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
+        {/* Summary Cards - ALWAYS VISIBLE */}
+        <div className="grid grid-cols-2 gap-4 mb-8 animate-scale-in" style={{ animationDelay: '0.2s' }}>
+          <div className="serene-card bg-gradient-to-br from-sage/8 to-sage-light/5 rounded-2xl p-6 text-center card-hover">
+            <div className="text-4xl mb-3">📔</div>
+            <div className="text-3xl font-bold text-sage-dark mb-1">{totalEntries}</div>
+            <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Total Reflections</div>
           </div>
-          {searchQuery && (
-            <div className="flex items-center gap-2 mt-2">
-              <p className="text-sm text-warm-gray">
-                Found {filteredEntries.length} {filteredEntries.length === 1 ? 'entry' : 'entries'}
-              </p>
-              {filteredEntries.length > 0 && (
-                <div className="flex items-center gap-1 text-xs text-light-muted">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Fuzzy search enabled
-                </div>
-              )}
-            </div>
-          )}
+
+          <div className="serene-card bg-gradient-to-br from-aqua/8 to-aqua-light/5 rounded-2xl p-6 text-center card-hover">
+            <div className="text-4xl mb-3">✍️</div>
+            <div className="text-3xl font-bold text-aqua-dark mb-1">{totalWords.toLocaleString()}</div>
+            <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Words Written</div>
+          </div>
         </div>
 
-        {!searchQuery && !selectedTags.length && (
-          <>
-            {/* Summary Cards - ORIGINAL */}
-            <div className="grid grid-cols-2 gap-4 mb-8 animate-scale-in" style={{ animationDelay: '0.2s' }}>
-              <div className="serene-card bg-gradient-to-br from-sage/8 to-sage-light/5 rounded-2xl p-6 text-center card-hover">
-                <div className="text-4xl mb-3">📔</div>
-                <div className="text-3xl font-bold text-sage-dark mb-1">{totalEntries}</div>
-                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Total Reflections</div>
-              </div>
-
-              <div className="serene-card bg-gradient-to-br from-aqua/8 to-aqua-light/5 rounded-2xl p-6 text-center card-hover">
-                <div className="text-4xl mb-3">✍️</div>
-                <div className="text-3xl font-bold text-aqua-dark mb-1">{totalWords.toLocaleString()}</div>
-                <div className="text-sm font-medium text-warm-gray uppercase tracking-wider">Words Written</div>
-              </div>
-            </div>
-
-            {/* Emotional Landscape - ORIGINAL with tag cloud added */}
-            <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.25s' }}>
+        {/* Emotional Landscape - ALWAYS VISIBLE */}
+        <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.25s' }}>
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-charcoal tracking-tight mb-1" style={{ fontFamily: 'var(--font-display)' }}>
                   Your Emotional Landscape
@@ -591,10 +548,10 @@ export default function Dashboard() {
                   );
                 })}
               </div>
-            </div>
+        </div>
 
-            {/* Calendar Section - ORIGINAL */}
-            <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.3s' }}>
+        {/* Calendar Section - ALWAYS VISIBLE */}
+        <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.3s' }}>
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-2xl font-bold text-charcoal tracking-tight mb-1" style={{ fontFamily: 'var(--font-display)' }}>Your Journey</h3>
@@ -617,12 +574,51 @@ export default function Dashboard() {
                 onActiveStartDateChange={setActiveStartDate}
               />
             </div>
-          </>
-        )}
 
-        {/* Tags Card - NEW Separate Card - ALWAYS VISIBLE */}
+        {/* Search Bar - Moved below calendar */}
+        <div className="mb-8 animate-slide-in" style={{ animationDelay: '0.32s' }}>
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search your reflections..."
+              className="w-full bg-soft-white border border-sage/20 text-charcoal pl-12 pr-5 py-4 rounded-xl focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/10 transition-all placeholder:text-light-muted shadow-serene"
+            />
+            <svg className="w-5 h-5 text-warm-gray absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-gray hover:text-charcoal transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <div className="flex items-center gap-2 mt-2">
+              <p className="text-sm text-warm-gray">
+                Found {filteredEntries.length} {filteredEntries.length === 1 ? 'entry' : 'entries'}
+              </p>
+              {filteredEntries.length > 0 && (
+                <div className="flex items-center gap-1 text-xs text-light-muted">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Fuzzy search enabled
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Tags Card - ALWAYS VISIBLE */}
         {allTags.length > 0 && (
-          <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.28s' }}>
+          <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.35s' }}>
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-2xl font-bold text-charcoal tracking-tight mb-1" style={{ fontFamily: 'var(--font-display)' }}>
