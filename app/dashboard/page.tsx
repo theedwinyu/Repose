@@ -421,7 +421,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-serene">
-      <Header title="Dashboard" />
+      <Header title="Repose" />
 
       <main className="max-w-7xl mx-auto p-6">
         {/* Welcome Section - ORIGINAL LAYOUT */}
