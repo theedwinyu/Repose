@@ -1,66 +1,76 @@
-// app/types.ts
-export type Mood = 'peaceful' | 'happy' | 'neutral' | 'sad' | 'stressed' | undefined;
+// types.ts
+// Updated with weather context support and tagging system
+
+export type Mood = 'peaceful' | 'content' | 'neutral' | 'reflective' | 'heavy';
+
+export interface WeatherData {
+  condition: string;
+  description: string;
+  temp: number;
+  icon: string;
+  humidity?: number;
+  windSpeed?: number;
+}
+
+export interface LocationData {
+  city: string;
+  region: string;
+  country: string;
+}
 
 export interface WeatherContext {
-  temperature?: number;
-  condition?: string;
-  location?: string;
-  icon?: string;
+  location: LocationData;
+  weather: WeatherData;
+  timestamp: string;
 }
 
 export interface JournalEntry {
   title: string;
   mood: Mood;
   timestamp: string;
-  weatherContext?: WeatherContext;
-  tags?: string[];  // New: Tag support
-  createdAt?: string;  // New: Track creation time
-  updatedAt?: string;  // New: Track last update time
+  weatherContext?: WeatherContext;  // Optional weather + location data
+  tags?: string[];  // Optional tags for organization
+  createdAt?: string;  // ISO timestamp of when entry was created
+  updatedAt?: string;  // ISO timestamp of last update
 }
 
 export interface UserConfig {
   name: string;
-  autoWeather?: boolean;
+  autoWeather?: boolean;  // User preference for auto-fetching weather
 }
 
 export interface JournalEntryWithBody extends JournalEntry {
   body: string;
 }
 
-// New: Tag statistics and management
+// Tag-related types
 export interface TagStats {
   name: string;
   count: number;
   lastUsed: string;
-  entries: string[];  // Array of entry IDs (dates)
+  entries: string[];
 }
 
-export interface TagFilter {
-  tags: string[];
-  operator: 'AND' | 'OR';
-}
-
-// New: Tag color mapping (deterministic based on tag name)
+// Tag color assignment - deterministic color based on tag name
 export const getTagColor = (tag: string): string => {
   const colors = [
-    'bg-sage/20 text-sage-dark border-sage/30',
-    'bg-sky/20 text-sky-dark border-sky/30',
-    'bg-aqua/20 text-aqua-dark border-aqua/30',
-    'bg-lavender/20 text-lavender-dark border-lavender/30',
-    'bg-sand/20 text-sand-dark border-sand/30',
-    'bg-rose/20 text-rose-dark border-rose/30',
+    'bg-sage/10 text-sage-dark border-sage/30',
+    'bg-aqua/10 text-aqua-dark border-aqua/30',
+    'bg-sky/10 text-sky-dark border-sky/30',
+    'bg-lavender/10 text-lavender-dark border-lavender/30',
+    'bg-sand/10 text-sand-dark border-sand/30',
+    'bg-sage-light/10 text-sage border-sage/30',
   ];
   
-  // Generate consistent color based on tag name
+  // Simple hash function to get consistent color for each tag
   let hash = 0;
   for (let i = 0; i < tag.length; i++) {
     hash = tag.charCodeAt(i) + ((hash << 5) - hash);
   }
-  
   return colors[Math.abs(hash) % colors.length];
 };
 
-// New: Tag validation
+// Tag validation
 export const validateTag = (tag: string): { valid: boolean; error?: string } => {
   if (!tag || tag.trim().length === 0) {
     return { valid: false, error: 'Tag cannot be empty' };
@@ -70,15 +80,14 @@ export const validateTag = (tag: string): { valid: boolean; error?: string } => 
     return { valid: false, error: 'Tag must be 30 characters or less' };
   }
   
-  // Allow letters, numbers, hyphens, and underscores
-  if (!/^[a-zA-Z0-9_-]+$/.test(tag)) {
-    return { valid: false, error: 'Tag can only contain letters, numbers, hyphens, and underscores' };
+  if (!/^[a-z0-9_-]+$/.test(tag)) {
+    return { valid: false, error: 'Tag can only contain lowercase letters, numbers, hyphens, and underscores' };
   }
   
   return { valid: true };
 };
 
-// New: Normalize tag (lowercase, trim)
+// Normalize tag for storage
 export const normalizeTag = (tag: string): string => {
-  return tag.toLowerCase().trim();
+  return tag.toLowerCase().trim().replace(/\s+/g, '-');
 };

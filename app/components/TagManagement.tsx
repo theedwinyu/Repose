@@ -159,7 +159,7 @@ export default function TagManagement({
               <label className="text-sm font-medium text-charcoal">Sort by:</label>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as 'name' | 'count' | 'recent')}
                 className="px-3 py-1.5 rounded-lg border border-sage/20 text-sm focus:border-sage focus:ring-2 focus:ring-sage/20"
               >
                 <option value="count">Usage Count</option>
