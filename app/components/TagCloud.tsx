@@ -1,20 +1,19 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { getTagColor } from '@/app/types';
-import { JournalEntry } from '@/app/types';
+import { useMemo } from 'react';
+import { JournalEntry, getTagColor } from '@/app/types';
+
+interface TagWithStats {
+  name: string;
+  count: number;
+  size: number;
+}
 
 interface TagCloudProps {
   entries: Map<string, JournalEntry>;
   onTagClick?: (tag: string) => void;
   selectedTags?: string[];
   maxTags?: number;
-}
-
-interface TagWithStats {
-  name: string;
-  count: number;
-  size: number; // For visual sizing
 }
 
 export default function TagCloud({ 
@@ -90,14 +89,19 @@ export default function TagCloud({
             <button
               key={tag.name}
               onClick={() => onTagClick?.(tag.name)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-all duration-200 hover:scale-110 ${getSizeClass(tag.size)} ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-all duration-200 hover:scale-105 border-2 ${getSizeClass(tag.size)} ${
                 isSelected 
-                  ? 'bg-sage/90 border-2 border-sage text-charcoal shadow-lg font-semibold' 
-                  : `border ${getTagColor(tag.name)} hover:shadow-md`
+                  ? 'bg-soft-white text-charcoal border-sage shadow-md scale-105' 
+                  : `${getTagColor(tag.name)} hover:shadow-sm`
               }`}
             >
               <span>#{tag.name}</span>
               <span className={`text-xs ${isSelected ? 'opacity-60' : 'opacity-70'}`}>({tag.count})</span>
+              {isSelected && (
+                <svg className="w-3.5 h-3.5 text-sage" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
             </button>
           );
         })}

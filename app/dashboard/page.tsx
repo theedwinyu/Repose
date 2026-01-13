@@ -41,8 +41,11 @@ export default function Dashboard() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [greeting, setGreeting] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedMoods, setSelectedMoods] = useState<Mood[]>([]); // NEW: Selected moods filter
   const [showTagManagement, setShowTagManagement] = useState(false);
   const [isUpdatingTags, setIsUpdatingTags] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1); // NEW: Pagination state
+  const ITEMS_PER_PAGE = 10; // NEW: Items per page constant
 
   const [searchableEntries, setSearchableEntries] = useState<Array<{
     dateStr: string;
@@ -61,6 +64,11 @@ export default function Dashboard() {
     
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedTags, selectedMoods]);
 
   // Get all available tags
   const allTags = useMemo(() => getAllTags(entries), [entries]);
@@ -82,7 +90,7 @@ export default function Dashboard() {
     });
   }, [searchableEntries]);
 
-  // Filter entries by tags first, then by search query
+  // Filter entries by tags, moods, then by search query
   const filteredEntries = useMemo(() => {
     if (!entries) return [];
     
@@ -92,14 +100,26 @@ export default function Dashboard() {
       tagFiltered = filterEntriesByTags(entries, selectedTags, 'OR');
     }
     
+    // NEW: Apply mood filter
+    let moodFiltered = tagFiltered;
+    if (selectedMoods.length > 0) {
+      const filteredMap = new Map();
+      tagFiltered.forEach((entry, dateStr) => {
+        if (selectedMoods.includes(entry.mood)) {
+          filteredMap.set(dateStr, entry);
+        }
+      });
+      moodFiltered = filteredMap;
+    }
+    
     // Then apply search filter
     if (!debouncedSearchQuery.trim()) {
-      return Array.from(tagFiltered.entries())
+      return Array.from(moodFiltered.entries())
         .sort((a, b) => b[1].timestamp.localeCompare(a[1].timestamp));
     }
 
     if (!fuse) {
-      return Array.from(tagFiltered.entries())
+      return Array.from(moodFiltered.entries())
         .sort((a, b) => b[1].timestamp.localeCompare(a[1].timestamp));
     }
 
@@ -108,11 +128,11 @@ export default function Dashboard() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return results.map((result: any) => {
       const dateStr = result.item.dateStr;
-      const entry = tagFiltered.get(dateStr);
+      const entry = moodFiltered.get(dateStr);
       return [dateStr, entry] as [string, typeof entry];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }).filter((item: any): item is [string, NonNullable<typeof item[1]>] => item[1] !== undefined);
-  }, [debouncedSearchQuery, entries, fuse, selectedTags]);
+  }, [debouncedSearchQuery, entries, fuse, selectedTags, selectedMoods]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -169,8 +189,8 @@ export default function Dashboard() {
       
       setSearchableEntries(entriesWithContent);
     }
-
-    if (entries.size > 0) {
+    
+    if (entries.size > 0 && folderHandle) {
       loadEntriesForSearch();
     }
   }, [entries, folderHandle]);
@@ -208,9 +228,7 @@ export default function Dashboard() {
       });
       setEntries(newEntries);
       
-      if (selectedTags.includes(oldTag)) {
-        setSelectedTags(prev => prev.map(t => t === oldTag ? newTag : t));
-      }
+      setSelectedTags(prev => prev.map(t => t === oldTag ? newTag : t));
     } catch (error) {
       console.error('Failed to rename tag:', error);
       throw error;
@@ -304,6 +322,13 @@ export default function Dashboard() {
     );
   };
 
+  // NEW: Handle mood filter toggle
+  const handleMoodClick = (mood: Mood) => {
+    setSelectedMoods(prev => 
+      prev.includes(mood) ? prev.filter(m => m !== mood) : [...prev, mood]
+    );
+  };
+
   if (!isMounted || !folderHandle || !userConfig) {
     return null;
   }
@@ -349,9 +374,15 @@ export default function Dashboard() {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const hasEntryToday = entries.has(todayStr);
 
-  const recentEntries = (searchQuery.trim() || selectedTags.length > 0)
-    ? filteredEntries.slice(0, 10)
-    : filteredEntries.slice(0, 5);
+  // NEW: Pagination logic
+  const totalFilteredEntries = filteredEntries.length;
+  const totalPages = Math.ceil(totalFilteredEntries / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedEntries = filteredEntries.slice(startIndex, endIndex);
+
+  // Show more results when actively filtering, otherwise show fewer
+  const showingSearchResults = searchQuery.trim() || selectedTags.length > 0 || selectedMoods.length > 0;
 
   const handleDateClick = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -443,7 +474,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Week Activity Heatmap - ORIGINAL */}
+          {/* Week Activity Heatmap */}
           <div className="serene-card rounded-2xl p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-charcoal uppercase tracking-wider">Your Week</h3>
@@ -468,7 +499,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Create Today's Entry Button - ORIGINAL */}
+          {/* Create Today's Entry Button */}
           {!hasEntryToday && (
             <button
               onClick={handleWriteToday}
@@ -483,7 +514,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Summary Cards - ALWAYS VISIBLE */}
+        {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-4 mb-8 animate-scale-in" style={{ animationDelay: '0.2s' }}>
           <div className="serene-card bg-gradient-to-br from-sage/8 to-sage-light/5 rounded-2xl p-6 text-center card-hover">
             <div className="text-4xl mb-3">📔</div>
@@ -498,7 +529,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Emotional Landscape - ALWAYS VISIBLE */}
+        {/* Emotional Landscape */}
         <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.25s' }}>
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-charcoal tracking-tight mb-1" style={{ fontFamily: 'var(--font-display)' }}>
@@ -550,7 +581,7 @@ export default function Dashboard() {
               </div>
         </div>
 
-        {/* Calendar Section - ALWAYS VISIBLE */}
+        {/* Calendar Section */}
         <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.3s' }}>
               <div className="flex items-center justify-between mb-6">
                 <div>
@@ -575,7 +606,7 @@ export default function Dashboard() {
               />
             </div>
 
-        {/* Search Bar - Moved below calendar */}
+        {/* Search Bar */}
         <div className="mb-8 animate-slide-in" style={{ animationDelay: '0.32s' }}>
           <div className="relative">
             <input
@@ -599,12 +630,12 @@ export default function Dashboard() {
               </button>
             )}
           </div>
-          {searchQuery && (
+          {(searchQuery || selectedTags.length > 0 || selectedMoods.length > 0) && (
             <div className="flex items-center gap-2 mt-2">
               <p className="text-sm text-warm-gray">
                 Found {filteredEntries.length} {filteredEntries.length === 1 ? 'entry' : 'entries'}
               </p>
-              {filteredEntries.length > 0 && (
+              {filteredEntries.length > 0 && searchQuery && (
                 <div className="flex items-center gap-1 text-xs text-light-muted">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -616,7 +647,63 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Tags Card - ALWAYS VISIBLE */}
+        {/* NEW: Mood Filter Section */}
+        <div className="serene-card rounded-2xl p-6 mb-8 animate-slide-in" style={{ animationDelay: '0.33s' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-charcoal mb-1" style={{ fontFamily: 'var(--font-display)' }}>
+                Filter by Mood
+              </h3>
+              <p className="text-sm text-warm-gray">
+                {selectedMoods.length > 0 
+                  ? `Filtering by ${selectedMoods.length} ${selectedMoods.length === 1 ? 'mood' : 'moods'}`
+                  : 'Click to filter entries by emotional state'
+                }
+              </p>
+            </div>
+            {selectedMoods.length > 0 && (
+              <button
+                onClick={() => setSelectedMoods([])}
+                className="text-sm text-warm-gray hover:text-sage transition-colors font-medium"
+              >
+                Clear mood filters
+              </button>
+            )}
+          </div>
+          
+          <div className="flex flex-wrap gap-3">
+            {[
+              { mood: 'peaceful' as Mood, emoji: '😌', label: 'Peaceful', bgClass: 'bg-sage/10', activeClass: 'bg-soft-white text-charcoal border-sage' },
+              { mood: 'content' as Mood, emoji: '😊', label: 'Content', bgClass: 'bg-aqua/10', activeClass: 'bg-soft-white text-charcoal border-aqua' },
+              { mood: 'neutral' as Mood, emoji: '😐', label: 'Neutral', bgClass: 'bg-sand/10', activeClass: 'bg-soft-white text-charcoal border-sand-dark' },
+              { mood: 'reflective' as Mood, emoji: '😔', label: 'Reflective', bgClass: 'bg-lavender/10', activeClass: 'bg-soft-white text-charcoal border-lavender' },
+              { mood: 'heavy' as Mood, emoji: '😢', label: 'Heavy', bgClass: 'bg-sky/10', activeClass: 'bg-soft-white text-charcoal border-sky' },
+            ].map(({ mood, emoji, label, bgClass, activeClass }) => {
+              const isSelected = selectedMoods.includes(mood);
+              return (
+                <button
+                  key={mood}
+                  onClick={() => handleMoodClick(mood)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all duration-200 font-medium ${
+                    isSelected 
+                      ? activeClass + ' shadow-md scale-105'
+                      : bgClass + ' border-transparent text-charcoal hover:scale-105 hover:shadow-sm'
+                  }`}
+                >
+                  <span className="text-xl">{emoji}</span>
+                  <span className="text-sm">{label}</span>
+                  {isSelected && (
+                    <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tags Card */}
         {allTags.length > 0 && (
           <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.35s' }}>
             <div className="flex items-center justify-between mb-6">
@@ -658,24 +745,32 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Recent/Search Results - ORIGINAL with tags added */}
+        {/* Recent/Search Results with Pagination */}
         <div className="serene-card rounded-2xl p-8 mb-8 animate-slide-in" style={{ animationDelay: '0.5s' }}>
-          <h3 className="text-2xl font-bold text-charcoal mb-6 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
-            {searchQuery || selectedTags.length > 0 ? 'Search Results' : 'Recent Reflections'}
-          </h3>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-charcoal tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+              {showingSearchResults ? 'Search Results' : 'Recent Reflections'}
+            </h3>
+            {/* Show result count and page info when filtering */}
+            {showingSearchResults && totalFilteredEntries > 0 && (
+              <div className="text-sm text-warm-gray">
+                Showing {startIndex + 1}-{Math.min(endIndex, totalFilteredEntries)} of {totalFilteredEntries}
+              </div>
+            )}
+          </div>
           
-          {recentEntries.length === 0 ? (
+          {paginatedEntries.length === 0 ? (
             <div className="text-center py-20 wave-empty-state">
               <div className="text-7xl mb-6 animate-gentle-float">
-                {searchQuery || selectedTags.length > 0 ? '🔍' : '🌸'}
+                {showingSearchResults ? '🔍' : '🌸'}
               </div>
               <p className="text-charcoal text-2xl mb-3 font-semibold">
-                {searchQuery || selectedTags.length > 0 ? 'No entries found' : 'Begin your peaceful practice'}
+                {showingSearchResults ? 'No entries found' : 'Begin your peaceful practice'}
               </p>
               <p className="text-warm-gray mb-8">
-                {searchQuery || selectedTags.length > 0 ? 'Try different keywords or tags' : 'Your journey starts with a single thought'}
+                {showingSearchResults ? 'Try different keywords, tags, or moods' : 'Your journey starts with a single thought'}
               </p>
-              {!searchQuery && selectedTags.length === 0 && (
+              {!showingSearchResults && (
                 <button
                   onClick={handleWriteToday}
                   className="inline-flex items-center gap-2 btn-primary text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300"
@@ -688,60 +783,123 @@ export default function Dashboard() {
               )}
             </div>
           ) : (
-            <div className="space-y-3">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {recentEntries.map(([dateStr, entry]: [string, any]) => {
-                const preview = searchQuery ? getSearchPreview(dateStr) : '';
-                return (
-                  <button
-                    key={dateStr}
-                    onClick={() => handleDateClick(parse(dateStr, 'yyyy-MM-dd', new Date()))}
-                    className="w-full bg-soft-white hover:bg-sage-light/30 border border-sage/15 hover:border-sage/30 rounded-xl p-5 transition-all duration-300 text-left flex items-start gap-4 card-hover group"
-                  >
-                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-light-gray flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <span className="text-3xl">{moodEmojis[entry.mood]}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-charcoal font-semibold truncate text-lg mb-1 group-hover:text-sage-dark transition-colors">
-                        {entry.title}
-                      </h4>
-                      <p className="text-warm-gray text-sm font-medium mb-2">
-                        {format(parse(dateStr, 'yyyy-MM-dd', new Date()), 'MMMM d, yyyy • EEEE')}
-                      </p>
-                      {entry.tags && entry.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          {entry.tags.slice(0, 3).map((tag: string) => (
-                            <span
-                              key={tag}
-                              className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getTagColor(tag)}`}
-                            >
-                              #{tag}
-                            </span>
-                          ))}
-                          {entry.tags.length > 3 && (
-                            <span className="px-2 py-0.5 text-xs text-warm-gray">
-                              +{entry.tags.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      {preview && (
-                        <p className="text-light-muted text-xs leading-relaxed line-clamp-2">
-                          {preview}
+            <>
+              <div className="space-y-3 mb-6">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {paginatedEntries.map(([dateStr, entry]: [string, any]) => {
+                  const preview = searchQuery ? getSearchPreview(dateStr) : '';
+                  return (
+                    <button
+                      key={dateStr}
+                      onClick={() => handleDateClick(parse(dateStr, 'yyyy-MM-dd', new Date()))}
+                      className="w-full bg-soft-white hover:bg-sage-light/30 border border-sage/15 hover:border-sage/30 rounded-xl p-5 transition-all duration-300 text-left flex items-start gap-4 card-hover group"
+                    >
+                      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-light-gray flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span className="text-3xl">{moodEmojis[entry.mood]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-charcoal font-semibold truncate text-lg mb-1 group-hover:text-sage-dark transition-colors">
+                          {entry.title}
+                        </h4>
+                        <p className="text-warm-gray text-sm font-medium mb-2">
+                          {format(parse(dateStr, 'yyyy-MM-dd', new Date()), 'MMMM d, yyyy • EEEE')}
                         </p>
-                      )}
-                    </div>
-                    <svg className="w-5 h-5 text-light-muted flex-shrink-0 group-hover:text-sage group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {entry.tags && entry.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-2">
+                            {entry.tags.slice(0, 3).map((tag: string) => (
+                              <span
+                                key={tag}
+                                className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getTagColor(tag)}`}
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                            {entry.tags.length > 3 && (
+                              <span className="px-2 py-0.5 text-xs text-warm-gray">
+                                +{entry.tags.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {preview && (
+                          <p className="text-light-muted text-xs leading-relaxed line-clamp-2">
+                            {preview}
+                          </p>
+                        )}
+                      </div>
+                      <svg className="w-5 h-5 text-light-muted flex-shrink-0 group-hover:text-sage group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* NEW: Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-4 border-t border-sage/10">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-sage/10 text-charcoal"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Show first page, last page, current page, and pages around current
+                      const showPage = page === 1 || 
+                                      page === totalPages || 
+                                      (page >= currentPage - 1 && page <= currentPage + 1);
+                      
+                      const showEllipsis = (page === 2 && currentPage > 3) || 
+                                          (page === totalPages - 1 && currentPage < totalPages - 2);
+                      
+                      if (showEllipsis) {
+                        return (
+                          <span key={page} className="px-2 text-warm-gray">
+                            ...
+                          </span>
+                        );
+                      }
+                      
+                      if (!showPage) return null;
+                      
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-10 h-10 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            currentPage === page
+                              ? 'bg-soft-white text-charcoal border-2 border-sage shadow-md'
+                              : 'hover:bg-sage/10 text-charcoal'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-sage/10 text-charcoal"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
-                );
-              })}
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* Footer - ORIGINAL */}
+        {/* Footer */}
         <div className="text-center flex items-center justify-center gap-6 text-sm">
           <button
             onClick={handleChangeFolder}
