@@ -19,51 +19,209 @@ import { WeatherContext } from '../../types';
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 // Mood-adaptive journaling prompts
+// Sources: Day One, Atomic Habits, Stoic Philosophy, Zen Habits, CBT,
+// The Artist's Way, Positive Psychology, Somatic Therapy, Narrative Therapy,
+// DBT, ACT, Self-Compassion (Kristin Neff), Ikigai
+
 const promptsByMood = {
+  // Goal: Deepen the calm, reinforce gratitude, and savor the moment.
   peaceful: [
-    "Describe this feeling of peace. Where do you feel it in your body? What does it remind you of?",
-    "What helped you find this calm today? How can you return to this feeling when you need it?",
-    "What are you noticing right now that usually goes unnoticed?",
-    "Describe a moment today using all five senses. What did you see, hear, smell, taste, feel?",
-    "What part of your day felt most aligned with who you want to be?",
+    "What are you noticing right now that usually goes unnoticed?", // Zen - Mindfulness
+    "Describe a place, real or imaginary, where you feel completely safe and calm.", // Visualization
+    "What is one totally-free thing that has transformed your life recently?", // Gratitude
+    "Who has invested in your well-being recently? How can you thank them?", // Relationship Gratitude
+    "Describe a moment of profound beauty you witnessed today, no matter how small.", // Savoring
+    "What part of your day felt most aligned with your core values?", // Values Alignment
+    "If this feeling of peace had a color or a texture, what would it be?", // Somatic / Creative
+    "Write a short note of thanks to your body for carrying you through today.", // Self-Compassion
+    "What felt easy today?", // Non-striving (Zen)
+    "What did you not rush today?", // Slow living
+    "What ordinary thing felt quietly meaningful?", // CONSOLIDATED: Everyday presence (removed "quietest moment" and "made today complete")
+    "Where in your body do you feel most relaxed right now?", // Somatic awareness
+    "What sound felt comforting today?", // Sensory grounding
+    "What did you allow instead of resisting?", // Acceptance (ACT)
+    "What feels settled in your life right now?", // Stability
+    "What would staying in this feeling teach you?", // Insight from calm
+    "What part of yourself feels safest today?", // Internal safety (IFS)
+    "What do you not need to worry about tonight?", // Letting go
+    "What feels okay exactly as it is?", // Radical acceptance
+    "If today had a soft ending, what would it be?", // Gentle closure
+    "What would you like more days to feel like?", // Preference discovery
+    
+    // NEW HIGH-IMPACT ADDITIONS
+    "Who do you feel completely yourself around lately?", // Relationship depth
+    "What are you quietly excited about?", // Future-oriented
+    "What movement felt good today?", // Body-based
   ],
+
+  // Goal: Capture positive energy, record wins, and document life satisfaction.
   content: [
-    "What made today feel good? Be specific—was it a person, a moment, an accomplishment, or something else?",
-    "Write about a small moment today that made you smile or feel warm inside.",
-    "Who or what are you appreciating right now? Why does this matter to you?",
-    "What went better than expected today?",
-    "If you could bottle the feeling of today, what would you save it for?",
+    "What was the 'story-worthy' moment of today?", // Narrative
+    "What is a small win you had today that no one else knows about?", // Celebration
+    "If you could bottle the feeling of today, what would you name the vintage?", // Metaphor
+    "Who is pushing you to be the best version of yourself right now?", // Relationships
+    "What is a recent purchase (under $100) that has positively impacted your life?", // Resourcefulness
+    "Write about a moment today where you felt fully engaged and 'in the flow'.", // Flow (Positive Psych)
+    "What is something you're looking forward to in the near future?", // Optimism
+    "How did you practice self-care today?", // Wellness
+    "What did you enjoy more than you expected?", // Pleasant surprise
+    "What part of today would you happily repeat?", // Repeatability
+    "What felt earned today?", // Effort → reward
+    "What made you smile without trying?", // Natural joy
+    "Who benefited from your presence today?", // Contribution
+    "What problem did you handle better than before?", // Growth
+    "What feels stable in your life right now?", // Security
+    "What made today feel worthwhile?", // CONSOLIDATED: Meaning (removed "balanced" and "complete")
+    "What felt aligned without effort?", // Natural strengths
+    "What did you say no to that helped you?", // Boundaries
+    "What small pleasure did you fully enjoy?", // Savoring
+    "What part of your routine do you appreciate more now?", // Familiar gratitude
+    "What are you quietly proud of?", // Self-esteem
+    "If you had to describe today in one word, what would it be?", // Emotional clarity
+    
+    // NEW HIGH-IMPACT ADDITIONS
+    "What did someone trust you with recently?", // Relationship depth
+    "What are you building toward right now?", // Future-oriented
+    "Where in your body do you feel joy?", // Body-based
+    "What made you feel creatively alive today?", // The Artist's Way
+    "Name 3 people who made today easier.", // Gratitude (Emmons)
+    "What did you do today that the world needs?", // Ikigai - Purpose
   ],
+
+  // Goal: Turn "okay" into insight. Move from observation to clarity or planning.
   neutral: [
-    "Sometimes 'okay' is enough. What made today just... a day?",
-    "What thoughts have been circling in your mind lately?",
-    "If today was a color or a texture, what would it be? Why?",
-    "What's something small you did today that you usually take for granted?",
-    "What are you wondering about right now—about yourself, your life, or the world?",
+    "What did I learn today?", // Growth
+    "What is the harder choice I'm avoiding right now?", // Avoidance
+    "If today was a prototype for your average day, what would you keep and change?", // Iteration
+    "What problem am I currently trying to solve?", // Clarity
+    "What is one thing I can do tomorrow to make the day 1% better?", // Incrementalism (Atomic Habits)
+    "Review your day as an objective observer. What happened without judgment?", // Objectivity
+    "What is one thing you are curious about right now?", // Curiosity
+    "Are your current habits leading you toward or away from your desired identity?", // Identity (Atomic Habits)
+    "What took more energy than expected?", // Energy audit
+    "What felt unclear today?", // Ambiguity
+    "What pattern did you notice?", // Pattern recognition
+    "What decision did you postpone?", // Procrastination awareness
+    "What worked fine but could be improved?", // Optimization without pressure
+    "What did you react to instead of respond to?", // Emotional regulation
+    "What did you spend time on that didn't matter much?", // Prioritization
+    "What question are you circling lately?", // Open loops
+    "What would an outside observer notice about today?", // Perspective
+    "What assumption did you make?", // Cognitive bias
+    "What needs more structure in your life right now?", // Systems thinking
+    "What deserves a follow-up?", // Closure
+    "What information are you missing?", // Decision quality
+    "What would tomorrow benefit from?", // Gentle planning
+    "What felt neutral but meaningful?", // Subtle significance
+    
+    // NEW HIGH-IMPACT ADDITIONS
+    "What relationship needs attention?", // Relationship depth
+    "What experiment could you run this week?", // Future-oriented
+    "What does your body want to tell you?", // Body-based
+    "What synchronicities did you notice today?", // The Artist's Way - Awareness
+    "Did today move me toward or away from my values?", // ACT - Values alignment
+    "Rate today: emotion (0-10), energy (0-10), stress (0-10)", // DBT - Self-monitoring
   ],
+
+  // Goal: Explore complexity, identity, and perspective.
   reflective: [
-    "What's something you're trying to figure out right now? Write without needing to find the answer.",
-    "What emotions are beneath the surface today? Even if they're tangled or unclear, can you name them?",
-    "What would you say to a friend who was going through what you're going through?",
-    "Write a letter to your past self from one year ago. What would you want them to know?",
-    "What are you learning about yourself lately? It doesn't have to be profound—just honest.",
+    "What is a view about the world that has changed as you've gotten older?", // Perspective
+    "Are you holding onto something you need to let go of?", // Release
+    "If you lived exactly like today for 5 years, where would you end up?", // Trajectory
+    "What boundary do you need to draw right now?", // Boundaries
+    "Write a letter to your past self from one year ago.", // Time reflection
+    "In what ways might you be self-sabotaging?", // Shadow work
+    "What are the 'Morning Pages' of your mind right now?", // Brain dump (Artist's Way)
+    "What is a question you wish someone would ask you?", // Unmet needs
+    "What part of you is changing right now?", // Identity shift
+    "What belief are you questioning lately?", // Belief update
+    "What keeps repeating in your life?", // Pattern depth
+    "What are you becoming more honest about?", // Self-truth
+    "What fear is quieter than it used to be?", // Growth recognition
+    "What truth are you slowly accepting?", // Integration
+    "What role are you tired of playing?", // Authenticity (consider adding context: "The perfectionist? The helper? The strong one?")
+    "What does this season of life ask of you?", // Life context
+    "What do you need more space from?", // Boundaries
+    "What do you miss that surprised you?", // Unexpected grief
+    "What feels unresolved?", // Open emotional loops
+    "What version of you is emerging?", // Becoming
+    "What would you grieve if it ended?", // Value discovery
+    "What does 'enough' mean to you now?", // Sufficiency
+    "What are you learning about yourself lately?", // Self-knowledge
+    
+    // NEW HIGH-IMPACT ADDITIONS
+    "What relationship pattern are you noticing?", // Relationship depth
+    "What do you want to be true about you in 5 years?", // Future-oriented
+    "What sensation are you avoiding?", // Body-based (somatic)
+    "What are you pretending not to know?", // The Artist's Way - Shadow work
+    "If your life was a book, what chapter are you in?", // Narrative Therapy
+    "What matters most to me right now?", // ACT - Values work
+    "What are you good at that you also love doing?", // Ikigai - Intersection
   ],
+
+  // Goal: Process difficult emotions with compassion and grounding.
   heavy: [
-    "What do you need right now? Even if you can't have it, what would feel like relief?",
-    "Where in your body do you feel this heaviness? What would you say to that part of you?",
-    "List three very small things you did today, even if they feel insignificant. (Getting out of bed counts.)",
-    "What's one thing that feels too hard right now? You don't have to solve it, just name it.",
-    "If your pain could speak, what would it be trying to tell you?",
+    "If your anxiety or pain could speak, what would it say?", // Externalization
+    "What are 5 things you can control and 5 you cannot?", // Stoic - Dichotomy of control
+    "How would you comfort a small child who felt this way?", // Self-compassion (Kristin Neff)
+    "What is the bare minimum you need today?", // Survival mode
+    "How will today's difficulties show your character?", // Stoic - Reframing
+    "Write the worst-case scenario, then how you'd cope.", // Fear-setting (Tim Ferriss)
+    "What is one thing that is not wrong right now?", // CBT grounding
+    "I forgive myself for...", // Forgiveness
+    "What hurts the most right now?", // Naming pain
+    "What are you afraid to admit?", // Emotional honesty
+    "What do you need that you're not getting?", // Needs awareness
+    "What would make this 5% easier?", // Load reduction
+    "What are you blaming yourself for?", // Self-criticism awareness
+    "What are you carrying that isn't yours?", // Emotional boundaries
+    "What feels overwhelming, specifically?", // Decompression
+    "What emotion is underneath this one?", // Emotional layering
+    "What would rest look like today?", // Recovery
+    "What feels unfair?", // Validation
+    "What strength are you forgetting?", // Resilience
+    "What would asking for help look like?", // Support
+    "What does your body want right now?", // Somatic need
+    "What are you surviving?", // Acknowledgment
+    "What can wait until tomorrow?", // Pressure relief
+    
+    // NEW HIGH-IMPACT ADDITIONS
+    "Who would you call if you weren't afraid of burdening them?", // Relationship depth + Support
+    "What would future-you want current-you to know?", // Future-oriented + Self-compassion
+    "Where are you holding tension right now?", // Body-based (somatic)
+    "What are two opposite truths right now?", // DBT - Dialectical thinking (CRITICAL ADD)
+    "Dear [your name], I see you're struggling with...", // Self-compassion letter (Kristin Neff)
+    "What would radical acceptance of this situation look like?", // DBT/ACT - Acceptance
+    "Is this problem bigger than you, or are you bigger than this problem?", // Narrative Therapy - Externalization
   ],
+
+  // Goal: Extremely low friction. Safe to answer even on the worst days.
   lowEnergy: [
-    "How I feel right now:",
-    "Today I",
-    "My day in 3 emojis:",
-    "One thing I want to remember:",
-    "I'm here. That's enough for today.",
-    "Right now my body feels:",
-    "Something small I noticed:",
-    "Today I give myself permission to",
+    "Today in 3 emojis:", // Micro-journaling
+    "One tiny thing I managed to do today:", // Micro-win
+    "I give myself permission to...", // Self-permission
+    "Right now, my body feels:", // Somatic check-in
+    "How I feel in one word:", // REVISED: More direct than "weather inside my head" metaphor
+    "I am grateful for this one simple comfort:", // Micro-gratitude
+    "A song that describes my mood:", // Vibe
+    "Tomorrow, I hope to...", // Gentle hope
+    "Right now, I feel...", // Open-ended emotion
+    "Something warm or comforting:", // Sensory safety
+    "Today felt...", // Sentence fragment
+    "One thing that didn't go wrong:", // Cognitive grounding
+    "My energy level (0–10):", // Self-awareness
+    "I'm proud I showed up by...", // Self-kindness
+    "Something that helped, even a little:", // Support tracking
+    "I'm allowed to rest because...", // Permission
+    "What I need less of tomorrow:", // Boundary-lite
+    "A sound I liked today:", // Sensory anchor
+    "What I want to remember:", // Memory
+    "A word I need right now:", // Emotional need
+    "That's enough for today.", // Closure
+    "I'm still here.", // Existence acknowledgment
+    
+    // NEW HIGH-IMPACT ADDITIONS
+    "One good thing:", // Ultra-minimal gratitude (Robert Emmons)
   ],
 };
 
