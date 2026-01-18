@@ -122,7 +122,7 @@ async function reverseGeocode(lat: number, lon: number): Promise<LocationData> {
 }
 
 /**
- * Get weather data using Open-Meteo
+ * Get current weather data using Open-Meteo
  * 100% free, no API key required, no rate limits
  * https://open-meteo.com/en/docs
  */
@@ -161,13 +161,97 @@ async function getWeatherFromOpenMeteo(lat: number, lon: number): Promise<Weathe
 }
 
 /**
- * Get complete weather context (location + weather)
- * This is the main function to call when creating a new entry
+ * Get historical weather for a specific date using Open-Meteo Archive API
+ * Works for any date from 1940 to present
+ * 
+ * @param lat Latitude
+ * @param lon Longitude  
+ * @param dateStr Date in YYYY-MM-DD format
+ */
+async function getHistoricalWeather(lat: number, lon: number, dateStr: string): Promise<WeatherData> {
+  try {
+    // Calculate how many days ago this date was
+    const targetDate = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
+    const daysDiff = Math.floor((today.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    let apiUrl: string;
+    
+    if (daysDiff <= 7 && daysDiff >= 0) {
+      // Recent past (within 7 days) - use forecast API with past_days parameter
+      // This is faster and includes more detailed data
+      apiUrl = `https://api.open-meteo.com/v1/forecast?` +
+        `latitude=${lat}&longitude=${lon}&` +
+        `past_days=7&` +
+        `daily=temperature_2m_max,temperature_2m_min,weather_code&` +
+        `temperature_unit=fahrenheit&` +
+        `timezone=auto`;
+    } else if (daysDiff > 7) {
+      // Older past (> 7 days ago) - use archive API
+      // Goes back to 1940!
+      apiUrl = `https://archive-api.open-meteo.com/v1/archive?` +
+        `latitude=${lat}&longitude=${lon}&` +
+        `start_date=${dateStr}&end_date=${dateStr}&` +
+        `daily=temperature_2m_max,temperature_2m_min,weather_code&` +
+        `temperature_unit=fahrenheit&` +
+        `timezone=auto`;
+    } else {
+      // Future date - shouldn't happen, but fall back to current weather
+      return getWeatherFromOpenMeteo(lat, lon);
+    }
+    
+    const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch historical weather: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Find the specific date in the response
+    const dayIndex = data.daily.time.findIndex((t: string) => t === dateStr);
+    
+    if (dayIndex === -1) {
+      throw new Error(`Date ${dateStr} not found in weather data`);
+    }
+    
+    const weatherCode = data.daily.weather_code[dayIndex];
+    const tempMax = data.daily.temperature_2m_max[dayIndex];
+    const tempMin = data.daily.temperature_2m_min[dayIndex];
+    
+    // Use average of max and min for historical weather
+    const avgTemp = Math.round((tempMax + tempMin) / 2);
+    
+    const weatherInfo = weatherCodeToIcon[weatherCode] || {
+      condition: 'Unknown',
+      icon: '🌤️',
+      description: 'unknown',
+    };
+    
+    return {
+      condition: weatherInfo.condition,
+      description: weatherInfo.description,
+      temp: avgTemp,
+      icon: weatherInfo.icon,
+      // Historical data doesn't include humidity/wind
+      // These will be undefined, which is fine
+    };
+  } catch (error) {
+    console.error('Error fetching historical weather:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get complete weather context (location + weather) for TODAY
+ * This is for new entries being created right now
  * 
  * Steps:
  * 1. Get browser geolocation (asks user permission)
  * 2. Reverse geocode to get city name (BigDataCloud)
- * 3. Fetch weather (Open-Meteo)
+ * 3. Fetch current weather (Open-Meteo)
  */
 export async function getWeatherContext(): Promise<WeatherContext> {
   try {
@@ -177,7 +261,7 @@ export async function getWeatherContext(): Promise<WeatherContext> {
     // Step 2: Convert coordinates to city name
     const location = await reverseGeocode(coords.latitude, coords.longitude);
 
-    // Step 3: Get weather for those coordinates
+    // Step 3: Get current weather for those coordinates
     const weather = await getWeatherFromOpenMeteo(coords.latitude, coords.longitude);
 
     return {
@@ -187,6 +271,52 @@ export async function getWeatherContext(): Promise<WeatherContext> {
     };
   } catch (error) {
     console.error('Error fetching weather context:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get weather context for a SPECIFIC DATE (past, present, or future)
+ * Automatically chooses the right API based on the date
+ * 
+ * For today: Uses current weather
+ * For past dates: Uses historical weather from archive
+ * 
+ * @param dateStr Date in YYYY-MM-DD format
+ */
+export async function getWeatherContextForDate(dateStr: string): Promise<WeatherContext> {
+  try {
+    // Step 1: Get GPS coordinates from browser
+    const coords = await getBrowserLocation();
+
+    // Step 2: Convert coordinates to city name
+    const location = await reverseGeocode(coords.latitude, coords.longitude);
+
+    // Step 3: Determine if this is today or a past date
+    const targetDate = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    const isToday = targetDate.getTime() === today.getTime();
+    
+    let weather: WeatherData;
+    
+    if (isToday) {
+      // Use current weather for today
+      weather = await getWeatherFromOpenMeteo(coords.latitude, coords.longitude);
+    } else {
+      // Use historical weather for past dates
+      weather = await getHistoricalWeather(coords.latitude, coords.longitude, dateStr);
+    }
+
+    return {
+      location,
+      weather,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error('Error fetching weather context for date:', error);
     throw error;
   }
 }

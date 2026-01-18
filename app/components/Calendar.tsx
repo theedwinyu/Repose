@@ -49,9 +49,10 @@ export default function CalendarComponent({
     const entry = entries.get(dateStr);
 
     if (entry) {
+      const dayContent = entry.weatherContext ? moodEmojis[entry.mood] + " " + entry.title + " " + entry.weatherContext.weather.icon : moodEmojis[entry.mood] + " " + entry.title;
       return (
         <div className="flex justify-center mt-1">
-          <span className="text-lg">{moodEmojis[entry.mood]} {entry.title}</span>
+          <span className="text-lg">{dayContent}</span>
         </div>
       );
     }

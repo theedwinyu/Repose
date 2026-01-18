@@ -12,10 +12,9 @@ import TagInput from '../../components/TagInput';
 import { JournalEntry, getTagColor } from '../../types';
 import { getSuggestedTags } from '../../utils/tagUtils';
 import Image from 'next/image';
-import { getWeatherContext } from '../../lib/weather';
+import { getWeatherContext, getWeatherContextForDate } from '../../lib/weather';
 import WeatherDisplay from '../../components/WeatherDisplay';
 import { WeatherContext } from '../../types';
-
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 // Mood-adaptive journaling prompts
@@ -319,29 +318,48 @@ export default function JournalEditor() {
     loadEntry();
   }, [folderHandle, dateStr, router]);
 
-  // Fetch weather for new entries (only for today's date)
+
+  // Fetch weather ONLY for today's date, and ONLY for new entries
   useEffect(() => {
     const fetchWeather = async () => {
+      // Don't fetch if weather already exists
+      if (weatherContext) {
+        return;
+      }
+
+      // Only auto-fetch for TODAY's new entries
       const entryDate = parse(dateStr, 'yyyy-MM-dd', new Date());
       const isTodaysEntry = isToday(entryDate);
       
-      // Only fetch weather if:
-      // 1. This is a new entry (not existing)
-      // 2. The entry date is TODAY (not past or future)
       if (!isExisting && isTodaysEntry) {
         try {
           const weather = await getWeatherContext();
           setWeatherContext(weather);
         } catch (error) {
-          // User denied permission or error occurred
           console.log('Weather not available:', error);
-          // Entry still saves without weather - no problem!
         }
       }
     };
 
     fetchWeather();
-  }, [isExisting, dateStr]);
+  }, [isExisting, dateStr, weatherContext]);
+
+  // Manual weather fetch handler for past dates
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+  
+  const handleFetchWeather = async () => {
+    setIsLoadingWeather(true);
+    
+    try {
+      const weather = await getWeatherContextForDate(dateStr);
+      setWeatherContext(weather);
+    } catch (error) {
+      console.error('Failed to fetch weather:', error);
+      setError('Could not fetch weather. Please try again.');
+    } finally {
+      setIsLoadingWeather(false);
+    }
+  };
 
   const autoSave = useCallback(async () => {
     if (!folderHandle || !title.trim() || !mood) {
@@ -767,16 +785,45 @@ export default function JournalEditor() {
             <MoodSelector selected={mood} onChange={setMood} />
           </div>
 
-          {/* Weather Display */}
-          {weatherContext && (
+
+          {/* Weather Display or Button */}
+          {weatherContext ? (
+            // Case 1: Weather already exists - just show it
             <div className="mb-8">
               <WeatherDisplay 
                 weatherContext={weatherContext} 
                 className=""
               />
             </div>
-          )}
-
+          ) : !isToday(parse(dateStr, 'yyyy-MM-dd', new Date())) ? (
+            // Case 2: No weather + past date - show button to fetch
+            <div className="mb-8">
+              <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-sage/5 border border-sage/10 hover:bg-sage/10 transition-colors">
+                <span className="text-sm text-warm-gray flex items-center gap-2">
+                  <span className="text-lg">🌤️</span>
+                  Weather not recorded
+                </span>
+                <button
+                  onClick={handleFetchWeather}
+                  disabled={isLoadingWeather}
+                  className="text-sm font-medium text-sage hover:text-sage-700 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {isLoadingWeather ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-sage/30 border-t-sage rounded-full animate-spin"></div>
+                      Fetching...
+                    </>
+                  ) : (
+                    <>
+                      <span>📍</span>
+                      Add from current location
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {/* Case 3: No weather + today's date - weather will auto-fetch, no UI needed yet */}
           {/* Tags Input */}
           <div className="mb-8">
             <h4 className="text-sm font-semibold text-charcoal mb-3">Tags</h4>
