@@ -87,6 +87,7 @@ export default function CalendarComponent({
           onActiveStartDateChange(activeStartDate);
         }
       }}
+      calendarType="gregory"
       className="journal-calendar"
     />
   );
