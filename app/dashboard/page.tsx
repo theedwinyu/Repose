@@ -9,6 +9,7 @@ import { readEntry } from '../lib/fileSystem';
 import Header from '../components/Header';
 import TagCloud from '../components/TagCloud';
 import TagManagement from '../components/TagManagement';
+import WeatherDisplay from '../components/WeatherDisplay';
 import { getAllTags, filterEntriesByTags, renameTagInEntries, deleteTagFromEntries, mergeTagsInEntries } from '../utils/tagUtils';
 import { getTagColor } from '../types';
 import type { Mood } from "../types";
@@ -804,6 +805,14 @@ export default function Dashboard() {
                         <p className="text-warm-gray text-sm font-medium mb-2">
                           {format(parse(dateStr, 'yyyy-MM-dd', new Date()), 'MMMM d, yyyy • EEEE')}
                         </p>
+                        {entry.weatherContext && (
+                          <div className="mb-2">
+                            <WeatherDisplay 
+                              weatherContext={entry.weatherContext}
+                              className="text-xs text-warm-gray"
+                            />
+                          </div>
+                        )}
                         {entry.tags && entry.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mb-2">
                             {entry.tags.slice(0, 3).map((tag: string) => (
