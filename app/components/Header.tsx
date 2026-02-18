@@ -11,15 +11,6 @@ interface HeaderProps {
   onBack?: () => void;
 }
 
-// Resolved once on mount — safe because user agent never changes mid-session
-let _isMobileCache: boolean | null = null;
-function getIsMobile(): boolean {
-  if (_isMobileCache === null) {
-    _isMobileCache = typeof navigator !== 'undefined' ? isMobile() : false;
-  }
-  return _isMobileCache;
-}
-
 type ExportStatus = 'idle' | 'exporting' | 'done' | 'error';
 
 export default function Header({ title, showBackButton = false, onBack }: HeaderProps) {
@@ -38,8 +29,12 @@ export default function Header({ title, showBackButton = false, onBack }: Header
   const [exportError, setExportError] = useState('');
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const onMobile = getIsMobile();
+  // Resolved client-side only — avoids SSR poisoning the value as false
+  const [onMobile, setOnMobile] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Resolve mobile after mount so SSR always starts with false and hydration matches
+  useEffect(() => { setOnMobile(isMobile()); }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
