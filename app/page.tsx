@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useFolderContext } from './context/FolderContext';
-import { isFileSystemAccessSupported, openJournalFolder, writeConfig, listEntries, readConfig } from './lib/fileSystem';
+import { isAppSupported, isMobile, openJournalFolder, writeConfig, listEntries, readConfig } from './lib/fileSystem';
 
 type OnboardingStep = 'welcome' | 'how-it-works' | 'folder-selection' | 'name-input';
 
@@ -20,19 +20,22 @@ export default function Home() {
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [showFolderSuccess, setShowFolderSuccess] = useState(false);
   const [selectedFolderName, setSelectedFolderName] = useState('');
+  // Track whether we're on mobile so we can skip the folder-picker step
+  const [onMobile, setOnMobile] = useState(false);
 
-  const supported = typeof window !== 'undefined' && isFileSystemAccessSupported();
+  const supported = typeof window !== 'undefined' && isAppSupported();
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setIsMounted(true);
-      
+      setOnMobile(isMobile());
+
       const hour = new Date().getHours();
       if (hour < 12) setGreeting('Good morning');
       else if (hour < 18) setGreeting('Good afternoon');
       else setGreeting('Good evening');
     }, 0);
-    
+
     return () => clearTimeout(timeoutId);
   }, []);
 
@@ -42,30 +45,45 @@ export default function Home() {
     }
   }, [isMounted, folderHandle, userConfig, router]);
 
+  /**
+   * Shared helper — opens/initialises storage (OPFS on mobile, picker on
+   * desktop) then either navigates to dashboard (returning user) or advances
+   * to the name-input step (new user).
+   */
   const handleSelectFolder = async () => {
     setError('');
     setShowFolderSuccess(false);
-    
+
     const handle = await openJournalFolder();
-    
+
     if (handle) {
       setFolderHandle(handle);
-      setSelectedFolderName(handle.name);
-      
+      // On desktop the handle has a real name; on mobile OPFS returns "".
+      setSelectedFolderName(handle.name || 'your device');
+
       const existingConfig = await readConfig(handle);
       if (existingConfig) {
-        // Returning user - go straight to dashboard
+        // Returning user — load entries and go straight to dashboard
         setUserConfig(existingConfig);
         const entriesMap = await listEntries(handle);
         setEntries(entriesMap);
       } else {
-        // New user - show success and ask for name
+        // New user — show folder-selected confirmation and ask for name
         setShowFolderSuccess(true);
         setCurrentStep('name-input');
         const entriesMap = await listEntries(handle);
         setEntries(entriesMap);
       }
     }
+  };
+
+  /**
+   * On mobile, "Get Started" auto-initialises OPFS rather than showing a
+   * folder-picker step that would be confusing on a phone.
+   */
+  const handleMobileGetStarted = async () => {
+    setError('');
+    await handleSelectFolder();
   };
 
   const handleStartJournaling = async () => {
@@ -75,7 +93,7 @@ export default function Home() {
     }
 
     if (!folderHandle) {
-      setError('No folder selected');
+      setError('No storage initialised');
       return;
     }
 
@@ -98,7 +116,9 @@ export default function Home() {
     return null;
   }
 
+  // -------------------------------------------------------------------------
   // Browser not supported
+  // -------------------------------------------------------------------------
   if (!supported) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-serene">
@@ -110,12 +130,15 @@ export default function Home() {
           <p className="text-warm-gray leading-relaxed mb-6">
             Repose uses secure local storage that&apos;s only available in Chromium-based browsers.
           </p>
-          
+
           <div className="bg-sage/5 rounded-xl p-4 mb-6 text-left">
-            <p className="text-sm font-semibold text-sage-dark mb-2">Repose works best in:</p>
+            <p className="text-sm font-semibold text-sage-dark mb-2">Repose works in:</p>
             <ul className="space-y-1 text-sm text-warm-gray">
               <li className="flex items-center gap-2">
-                <span className="text-sage">✓</span> Chrome (recommended)
+                <span className="text-sage">✓</span> Chrome on desktop (recommended)
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-sage">✓</span> Chrome on Android
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-sage">✓</span> Edge
@@ -126,7 +149,7 @@ export default function Home() {
             </ul>
           </div>
 
-          <a 
+          <a
             href="https://www.google.com/chrome/"
             target="_blank"
             rel="noopener noreferrer"
@@ -139,7 +162,9 @@ export default function Home() {
     );
   }
 
+  // -------------------------------------------------------------------------
   // Welcome Screen
+  // -------------------------------------------------------------------------
   if (currentStep === 'welcome') {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-serene relative overflow-hidden">
@@ -154,9 +179,9 @@ export default function Home() {
           {/* Logo */}
           <div className="mb-8 flex justify-center">
             <div className="w-32 h-32 rounded-full overflow-hidden bg-soft-white shadow-serene-lg animate-gentle-float relative">
-              <Image 
-                src="/repose-logo.jpg" 
-                alt="Repose" 
+              <Image
+                src="/repose-logo.jpg"
+                alt="Repose"
                 width={128}
                 height={128}
                 className="w-full h-full object-cover"
@@ -169,7 +194,7 @@ export default function Home() {
           <h1 className="text-5xl md:text-6xl font-bold text-charcoal mb-3 tracking-tight animate-slide-in" style={{ fontFamily: 'var(--font-display)', animationDelay: '0.1s' }}>
             Repose
           </h1>
-          
+
           {/* Wave decoration */}
           <div className="flex justify-center gap-2 mb-6 text-2xl text-sage/40 animate-slide-in" style={{ animationDelay: '0.2s' }}>
             <span>～</span>
@@ -184,17 +209,34 @@ export default function Home() {
 
           {/* Buttons */}
           <div className="space-y-4 animate-scale-in" style={{ animationDelay: '0.4s' }}>
+            {onMobile ? (
+              // On mobile: skip the "how it works" / folder-picker screens.
+              // Auto-initialise OPFS and go straight to name input.
+              <button
+                onClick={handleMobileGetStarted}
+                className="w-full max-w-md mx-auto block btn-primary text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300"
+              >
+                Get Started
+              </button>
+            ) : (
+              <button
+                onClick={() => setCurrentStep('how-it-works')}
+                className="w-full max-w-md mx-auto block btn-primary text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300"
+              >
+                Get Started
+              </button>
+            )}
+
             <button
-              onClick={() => setCurrentStep('how-it-works')}
-              className="w-full max-w-md mx-auto block btn-primary text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300"
-            >
-              Get Started
-            </button>
-            
-            <button
-              onClick={() => {
+              onClick={async () => {
                 setIsReturningUser(true);
-                setCurrentStep('folder-selection');
+                if (onMobile) {
+                  // On mobile, "returning user" just re-opens OPFS which already
+                  // has config.json — handleSelectFolder will navigate directly.
+                  await handleSelectFolder();
+                } else {
+                  setCurrentStep('folder-selection');
+                }
               }}
               className="w-full max-w-md mx-auto block text-sage-dark hover:text-sage font-medium py-3 transition-colors"
             >
@@ -206,7 +248,9 @@ export default function Home() {
     );
   }
 
-  // How It Works Screen
+  // -------------------------------------------------------------------------
+  // How It Works Screen (desktop only — mobile skips straight past this)
+  // -------------------------------------------------------------------------
   if (currentStep === 'how-it-works') {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-serene">
@@ -267,7 +311,9 @@ export default function Home() {
     );
   }
 
-  // Folder Selection Screen
+  // -------------------------------------------------------------------------
+  // Folder Selection Screen (desktop only)
+  // -------------------------------------------------------------------------
   if (currentStep === 'folder-selection') {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-serene">
@@ -277,7 +323,7 @@ export default function Home() {
               {isReturningUser ? 'Welcome Back' : 'Select Your Journal Folder'}
             </h2>
             <p className="text-warm-gray">
-              {isReturningUser 
+              {isReturningUser
                 ? 'Choose your existing journal folder to continue'
                 : 'Choose where to save your journal entries'
               }
@@ -319,12 +365,14 @@ export default function Home() {
     );
   }
 
-  // Name Input Screen (after folder selected)
+  // -------------------------------------------------------------------------
+  // Name Input Screen (after storage initialised — both platforms)
+  // -------------------------------------------------------------------------
   if (currentStep === 'name-input' && folderHandle) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-serene">
         <div className="max-w-2xl w-full serene-card rounded-3xl p-8 md:p-12 animate-scale-in">
-          {/* Folder Success Animation */}
+          {/* Storage-ready confirmation */}
           {showFolderSuccess && (
             <div className="text-center mb-8 animate-fade-in">
               <div className="w-16 h-16 rounded-full bg-sage/10 flex items-center justify-center mx-auto mb-4">
@@ -332,9 +380,14 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p className="text-sage-dark font-semibold mb-2">Folder Selected!</p>
+              <p className="text-sage-dark font-semibold mb-2">
+                {onMobile ? 'Storage Ready!' : 'Folder Selected!'}
+              </p>
               <p className="text-sm text-warm-gray">
-                Your journal will be saved to: <span className="font-medium text-charcoal">{selectedFolderName}</span>
+                {onMobile
+                  ? 'Your journal will be stored privately on this device'
+                  : <>Your journal will be saved to: <span className="font-medium text-charcoal">{selectedFolderName}</span></>
+                }
               </p>
             </div>
           )}
