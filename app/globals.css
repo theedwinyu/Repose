@@ -2,35 +2,35 @@
 @import 'tailwindcss';
 
 :root {
-  /* Serene Color Palette - Wave Inspired */
-  --cream: #FAF9F6;
-  --light-gray: #F5F3EF;
-  --soft-white: #F8F6F3; /* Warmer off-white instead of pure white */
+  /* Noticeably Warm Palette - Night shift friendly with sage accents for wave logo */
+  --cream: #FFF5E6;              /* Much warmer peachy cream */
+  --light-gray: #FFF0DC;         /* Warm peachy-beige */
+  --soft-white: #FFF8F0;         /* Very warm off-white */
   
-  /* Wave-inspired teal/aqua (primary) */
+  /* Keep original sage/teal for wave logo harmony */
   --sage: #7FC5B8;
   --sage-light: #A8DDD3;
   --sage-dark: #5EA89D;
   
-  /* Aqua accent from wave */
+  /* Keep aqua accent from wave */
   --aqua: #6BC9C9;
   --aqua-light: #9BE0E0;
   --aqua-dark: #4BA5A5;
   
-  /* Soft yellow-green from wave glow */
-  --sand: #D8E8C4;
-  --sand-light: #EEF5E0;
-  --sand-dark: #C4D4A8;
+  /* Warm golden sand */
+  --sand: #F5E4C8;
+  --sand-light: #FFF0DC;
+  --sand-dark: #E8D4B0;
   
-  /* Sky blue (keep similar) */
-  --sky: #C5D8E8;
-  --sky-light: #E0EAF5;
-  --sky-dark: #A5B8C8;
+  /* Warm peachy for today indicator */
+  --sky: #FFE4CC;
+  --sky-light: #FFF0E0;
+  --sky-dark: #F0D4B8;
   
-  /* Lavender (subtle shift to match wave) */
-  --lavender: #D4C5E0;
-  --lavender-light: #EAE0F0;
-  --lavender-dark: #B4A5C0;
+  /* Soft warm peachy-pink */
+  --lavender: #FFE0D0;
+  --lavender-light: #FFF0E8;
+  --lavender-dark: #F0D0C0;
   
   --charcoal: #3A4A4A;
   --warm-gray: #6B7B7B;
@@ -260,12 +260,12 @@ html {
 }
 
 .journal-calendar .react-calendar__tile--now {
-  background: linear-gradient(135deg, rgba(197, 216, 232, 0.4), rgba(168, 197, 163, 0.4)) !important;
+  background: linear-gradient(135deg, rgba(255, 228, 204, 0.5), rgba(168, 197, 163, 0.4)) !important;
   border: 3px solid var(--sky-dark) !important;
   font-weight: 700;
   color: var(--charcoal) !important;
   position: relative;
-  box-shadow: 0 0 0 3px rgba(197, 216, 232, 0.3), 0 2px 8px rgba(197, 216, 232, 0.4) !important;
+  box-shadow: 0 0 0 3px rgba(255, 228, 204, 0.35), 0 2px 8px rgba(255, 228, 204, 0.4) !important;
 }
 
 .journal-calendar .react-calendar__tile--now::after {
@@ -281,14 +281,14 @@ html {
 }
 
 .journal-calendar .react-calendar__tile--now:hover {
-  background: linear-gradient(135deg, rgba(197, 216, 232, 0.6), rgba(168, 197, 163, 0.6)) !important;
+  background: linear-gradient(135deg, rgba(255, 228, 204, 0.7), rgba(168, 197, 163, 0.6)) !important;
   color: var(--charcoal) !important;
   border-color: var(--sky-dark) !important;
   transform: translateY(-2px);
 }
 
 .journal-calendar .react-calendar__tile.has-entry {
-  background: linear-gradient(135deg, rgba(168, 197, 163, 0.15), rgba(212, 197, 224, 0.15));
+  background: linear-gradient(135deg, rgba(168, 197, 163, 0.15), rgba(255, 224, 208, 0.15));
   border-color: var(--sage);
   box-shadow: 0 0 0 1px rgba(168, 197, 163, 0.2) inset;
   font-weight: 600;
@@ -296,7 +296,7 @@ html {
 }
 
 .journal-calendar .react-calendar__tile.has-entry:hover {
-  background: linear-gradient(135deg, rgba(168, 197, 163, 0.25), rgba(212, 197, 224, 0.25));
+  background: linear-gradient(135deg, rgba(168, 197, 163, 0.25), rgba(255, 224, 208, 0.25));
   box-shadow: 0 0 0 1px rgba(168, 197, 163, 0.3) inset;
   color: var(--charcoal);
 }
@@ -497,12 +497,12 @@ button:active:not(:disabled) {
 }
 
 .mood-neutral {
-  background: linear-gradient(135deg, rgba(232, 220, 196, 0.15), rgba(245, 239, 224, 0.15));
+  background: linear-gradient(135deg, rgba(245, 228, 200, 0.2), rgba(255, 240, 220, 0.2));
   border-color: var(--sand);
 }
 
 .mood-sad {
-  background: linear-gradient(135deg, rgba(197, 216, 232, 0.15), rgba(224, 234, 245, 0.15));
+  background: linear-gradient(135deg, rgba(255, 228, 204, 0.2), rgba(255, 240, 224, 0.2));
   border-color: var(--sky);
 }
 
@@ -662,162 +662,5 @@ select:focus {
   letter-spacing: 8px;
   pointer-events: none;
   animation: wave-float 8s ease-in-out infinite;
-  animation-delay: 2s;
-}
-
-/* Selection */
-::selection {
-  background: var(--sage-light);
-  color: var(--charcoal);
-}
-
-/* Utility Classes */
-.text-gradient-sage {
-  background: linear-gradient(135deg, var(--sage), var(--sage-dark));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.bg-gradient-serene {
-  background: linear-gradient(135deg, var(--cream), var(--light-gray));
-}
-
-.shadow-serene {
-  box-shadow: 
-    0 2px 8px rgba(58, 74, 74, 0.03),
-    0 4px 16px rgba(58, 74, 74, 0.02);
-}
-
-.shadow-serene-lg {
-  box-shadow: 
-    0 4px 16px rgba(58, 74, 74, 0.04),
-    0 8px 32px rgba(58, 74, 74, 0.03);
-}
-
-/* Breathe Effect for Headers */
-@keyframes breathe {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.02);
-    opacity: 0.95;
-  }
-}
-
-.breathe {
-  animation: breathe 4s ease-in-out infinite;
-}
-
-/* ========================================
-   PERFORMANCE OPTIMIZATIONS
-   ======================================== */
-
-/* Reduced Motion Support - Accessibility */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-  
-  /* Disable floating animations for accessibility */
-  .animate-wave-float,
-  .animate-gentle-float,
-  .animate-gentle-pulse {
-    animation: none !important;
-  }
-}
-
-/* GPU Acceleration for smooth animations */
-.animate-fade-in,
-.animate-slide-in,
-.animate-scale-in,
-.animate-gentle-float,
-.animate-wave-float {
-  will-change: transform, opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* ========================================
-   TASK LIST STYLES (CHECKBOXES)
-   ======================================== */
-
-/* Task list items */
-ul[data-type="taskList"] {
-  list-style: none;
-  padding-left: 0;
-}
-
-ul[data-type="taskList"] li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-}
-
-ul[data-type="taskList"] li > label {
-  flex: 0 0 auto;
-  user-select: none;
-  cursor: pointer;
-  margin-top: 0.125rem;
-}
-
-ul[data-type="taskList"] li > div {
-  flex: 1;
-  padding-top: 0.125rem;
-}
-
-ul[data-type="taskList"] input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid var(--sage);
-  border-radius: 0.25rem;
-  cursor: pointer;
-  appearance: none;
-  background-color: var(--soft-white);
-  transition: all 0.2s ease;
-  display: inline-block;
-}
-
-ul[data-type="taskList"] input[type="checkbox"]:checked {
-  background-color: var(--sage);
-  border-color: var(--sage-dark);
-}
-
-ul[data-type="taskList"] input[type="checkbox"]:checked::after {
-  content: '✓';
-  display: block;
-  text-align: center;
-  color: white;
-  font-size: 0.75rem;
-  font-weight: bold;
-  line-height: 0.9rem;
-}
-
-ul[data-type="taskList"] input[type="checkbox"]:hover {
-  border-color: var(--sage-dark);
-  box-shadow: 0 0 0 2px rgba(127, 197, 184, 0.1);
-}
-
-/* Strikethrough completed tasks */
-ul[data-type="taskList"] li[data-checked="true"] > div {
-  text-decoration: line-through;
-  color: var(--light-muted);
-}
-
-/* Nested task lists */
-ul[data-type="taskList"] ul[data-type="taskList"] {
-  margin-top: 0.5rem;
-  margin-left: 1.5rem;
-}
-
-/* Ensure proper paragraph spacing in task items */
-ul[data-type="taskList"] li > div > p {
-  margin: 0;
+  animation-delay: -2s;
 }
